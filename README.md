@@ -35,12 +35,20 @@ npm run lint
 - Textos: `src/i18n/dictionaries/es.ts` y `en.ts`.
 - Datos de contacto, estados y servicios: `src/lib/site.ts`.
 
-## Pendientes de ASFRA
+## Formularios → GoHighLevel
 
-1. **Logo original.** Copiar el archivo a `public/brand/` y completar `LOGO` en `src/components/ui/Logo.tsx` (ruta, ancho y alto). No se redibuja ni se modifica.
-2. **Destino de los formularios.** Definir la variable `LEAD_WEBHOOK_URL` (ver `.env.example`). Sin ella, en producción los formularios muestran un error y mandan al visitante a WhatsApp; no se pierde ningún lead en silencio.
-3. **Textos de detalle por servicio** (requisitos, documentos, tiempos), si se quieren publicar.
-4. **Revisión del inglés** por parte de ASFRA.
+Los dos formularios (cotización y registro de agencias) envían un JSON a `POST /api/lead`, que lo reenvía a `LEAD_WEBHOOK_URL`: el *Inbound Webhook* del workflow **"Web asfraservices.com - Formularios"** (carpeta *01 - Master*) de la subcuenta Asfra Services LLC.
+
+- El workflow crea o actualiza el contacto con nombre, teléfono (+1…), correo, estado, *Requested Service*, *Business Name* (agencias) y *Contact source* = `asfraservices.com`.
+- Etiquetas: `sitio-web` siempre, más `web-cotizacion` o `web-agencia` según el formulario.
+- El valor de *Requested Service* sale de `GHL_REQUESTED_SERVICE` en `src/lib/submitLead.ts` (ITIN → "Other", porque el CRM no tiene opción propia).
+- La URL del webhook **no está en el repositorio** (es público): vive solo en las variables de entorno de Vercel.
+- Sin `LEAD_WEBHOOK_URL`, en producción los formularios muestran un error y mandan al visitante a WhatsApp; no se pierde ningún lead en silencio.
+
+## Pendientes
+
+1. **Textos de detalle por servicio** (requisitos, documentos, tiempos), si se quieren publicar.
+2. **Revisión del inglés** por parte de ASFRA.
 
 ## Publicar en Vercel con asfraservices.com
 
