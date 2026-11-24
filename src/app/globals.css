@@ -1,0 +1,205 @@
+@import "tailwindcss";
+
+@theme {
+  --color-royal: #005dff;
+  --color-royal-400: #4d8dff;
+  --color-deep: #0a2f87;
+  --color-navy: #0e1a3d;
+  --color-ink: #070d22;
+  --color-whatsapp: #25d366;
+
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-brand: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background: var(--color-navy);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-navy);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+::selection {
+  background: var(--color-royal);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-royal-400);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+/* Small uppercase labels */
+.eyebrow {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-royal-400);
+}
+
+/* Crosshair corners for framed panels */
+.crosshair {
+  position: relative;
+}
+.crosshair > .ch {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.crosshair > .ch::before,
+.crosshair > .ch::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.85);
+}
+.crosshair > .ch::before {
+  left: 6px;
+  top: 0;
+  width: 1.5px;
+  height: 14px;
+}
+.crosshair > .ch::after {
+  top: 6px;
+  left: 0;
+  height: 1.5px;
+  width: 14px;
+}
+.crosshair > .ch.tl { top: 10px; left: 10px; }
+.crosshair > .ch.tr { top: 10px; right: 10px; }
+.crosshair > .ch.bl { bottom: 10px; left: 10px; }
+.crosshair > .ch.br { bottom: 10px; right: 10px; }
+
+/* Spotlight card */
+.spot {
+  --x: 50%;
+  --y: 0%;
+  --o: 0;
+  position: relative;
+  isolation: isolate;
+}
+.spot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(220px circle at var(--x) var(--y), var(--color-royal-400), rgba(255, 255, 255, 0.1) 60%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.spot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(240px circle at var(--x) var(--y), rgba(0, 93, 255, 0.28), transparent 65%);
+  opacity: var(--o);
+  transition: opacity 0.3s var(--ease-brand);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .spot:hover {
+    --o: 1;
+  }
+}
+
+/* Marquee */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  animation: marquee 40s linear infinite;
+}
+
+@keyframes ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+.ring-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid var(--color-whatsapp);
+  animation: ring 2.6s var(--ease-brand) infinite;
+}
+
+/* Elements animated by JS start hidden only when JS + motion are available */
+html.js-motion [data-reveal],
+html.js-motion .usmap[data-animate] :is(.m-base, .m-state, .m-node, .m-label),
+html.js-motion .usmap[data-animate] .m-link {
+  opacity: 0;
+}
+.usmap .m-ring {
+  opacity: 0;
+}
+.p-phrase:not(:first-child),
+.p-icon:not(:first-child) {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track,
+  .ring-pulse::after {
+    animation: none !important;
+  }
+  html.js-motion [data-reveal] {
+    opacity: 1;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
