@@ -21,7 +21,7 @@ export function Footer({ lang, t }: { lang: Locale; t: Dictionary }) {
 
         <div className="mt-16 grid gap-10 border-t border-white/10 pt-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
-            <Logo />
+            <Logo className="size-20" sizes="80px" />
             <p className="max-w-xs text-sm text-white/60">{t.brand.subtitle}</p>
           </div>
 

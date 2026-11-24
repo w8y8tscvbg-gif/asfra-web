@@ -90,7 +90,7 @@ export function Header({ lang, t }: Props) {
           className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 rounded-2xl border border-white/10 bg-navy/75 pl-4 pr-2 shadow-[0_20px_50px_-25px_rgba(0,0,0,.8)] backdrop-blur-xl"
         >
           <Link href={home} aria-label={t.nav.home} className="flex items-center">
-            <Logo />
+            <Logo priority />
           </Link>
 
           <ul className="hidden items-center gap-1 md:flex">
