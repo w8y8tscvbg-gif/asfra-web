@@ -9,6 +9,9 @@ export function proxy(request: NextRequest) {
 
   if (pathname === "/en" || pathname.startsWith("/en/")) return NextResponse.next();
 
+  // Generated share images (/es/opengraph-image) are linked with their locale prefix; serve them as-is.
+  if (pathname.endsWith("/opengraph-image")) return NextResponse.next();
+
   if (pathname === "/es" || pathname.startsWith("/es/")) {
     const url = request.nextUrl.clone();
     url.pathname = pathname.slice(3) || "/";
