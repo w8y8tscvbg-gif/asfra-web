@@ -40,7 +40,6 @@ const en: Dictionary = {
     ctaSecondary: "I'm an insurance agency",
     mapLabel: "Map of the U.S. showing the 13 states where ASFRA works",
     connect: "Scroll to connect",
-    connected: "13 states connected",
   },
   pinned: {
     eyebrow: "ASFRA · Everything in one place",

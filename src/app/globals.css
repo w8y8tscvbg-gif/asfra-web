@@ -190,35 +190,20 @@ html.js-motion .usmap[data-animate] .m-link {
 html.has-3d .map-fallback {
   visibility: hidden;
 }
-html.has-3d .hero-glow {
-  opacity: 0;
-}
-/* Keeps the headline readable over the live map */
-html.has-3d .hero-scrim {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.75) 48%, rgba(255, 255, 255, 0) 72%);
-}
-@media (min-width: 1024px) {
-  html.has-3d .hero-scrim {
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.7) 36%, rgba(255, 255, 255, 0) 60%);
-    /* no hard edge when the pinned hero scrolls away */
-    -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
-    mask-image: linear-gradient(180deg, #000 70%, transparent);
-  }
-}
-/* Extra scroll length for the hero while the 3D map connects the states */
+/* Hero: the first screen is the copy and the services ring only. With the live 3D map, the stage stays
+   pinned while scrolling clears the copy away, brings the map in and connects the states. */
 html.has-3d .hero-track {
-  padding-bottom: 38svh;
+  height: 300svh;
+}
+html.has-3d .hero-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 0;
 }
 @media (min-width: 1024px) {
   html.has-3d .hero-track {
-    height: 190svh;
-    padding-bottom: 0;
-  }
-  html.has-3d .hero-stage {
-    position: sticky;
-    top: 0;
-    height: 100svh;
-    min-height: 0;
+    height: 260svh;
   }
 }
 /* States tour: the section stays pinned while the 3D camera visits each state */
@@ -330,6 +315,128 @@ html.has-3d .states-chips {
   55%,
   100% {
     background-position: -30% 0;
+  }
+}
+/* Hero services ring. Default (no JS / reduced motion): logo, then the services as a wrapped list.
+   .ring-on (set by the script): logo in the centre, services orbiting it. */
+.svc-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+.ring-core {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+}
+.ring-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.orb-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid rgb(14 26 61 / 0.1);
+  background: #fff;
+  padding: 0.3rem;
+  color: var(--color-navy);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 12px 30px -14px rgb(14 26 61 / 0.4);
+  transition:
+    background-color 0.35s var(--ease-brand),
+    color 0.35s var(--ease-brand),
+    border-color 0.35s var(--ease-brand);
+}
+.orb-icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: var(--color-royal);
+  color: #fff;
+  transition:
+    background-color 0.35s var(--ease-brand),
+    color 0.35s var(--ease-brand);
+}
+.orb-name {
+  display: block;
+  overflow: hidden;
+  padding: 0 0.85rem 0 0.6rem;
+}
+html.js-motion .svc-ring:not(.ring-on) {
+  opacity: 0;
+}
+.svc-ring.ring-on {
+  display: block;
+  height: 16rem;
+}
+.ring-on .ring-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  translate: -50% -50%;
+  animation: ring-float 5s ease-in-out infinite;
+}
+.ring-on .orb {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  will-change: transform;
+}
+.ring-on .orb-name {
+  max-width: 0;
+  padding: 0;
+  transition:
+    max-width 0.45s var(--ease-brand),
+    padding 0.45s var(--ease-brand);
+}
+.ring-on .orb[data-front="1"] .orb-name {
+  padding: 0 0.95rem 0 0.6rem;
+}
+.ring-on .orb[data-front="1"] .orb-chip {
+  background: var(--color-royal);
+  border-color: var(--color-royal);
+  color: #fff;
+}
+.ring-on .orb[data-front="1"] .orb-icon {
+  background: #fff;
+  color: var(--color-royal);
+}
+@media (min-width: 640px) {
+  .ring-core {
+    width: 7rem;
+    height: 7rem;
+  }
+  .svc-ring.ring-on {
+    height: 21rem;
+  }
+}
+@media (min-width: 1024px) {
+  .ring-core {
+    width: 11rem;
+    height: 11rem;
+  }
+  .svc-ring.ring-on {
+    height: 34rem;
+  }
+}
+@keyframes ring-float {
+  0%,
+  100% {
+    transform: translateY(-5px);
+  }
+  50% {
+    transform: translateY(5px);
   }
 }
 /* Hero quote button: a soft pulse of blue light, stronger when the cursor is near */

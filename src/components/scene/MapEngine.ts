@@ -6,7 +6,8 @@ import type { Map3DData } from "@/lib/usMap";
  * the 13 states ASFRA serves are raised and turn royal blue as they connect, joined by blue arcs.
  * Drawn on white: "dim" fades the whole canvas toward the white page instead of darkening it.
  * A cue list pinned to page sections ([data-cue]) drives the camera from the scroll, and scrolling
- * through the hero connects the states one by one (no clicks needed). Further down, the camera tours
+ * through the hero first brings the map in (the first screen is copy only), then connects the states
+ * one by one, each sending a ripple across the map. Further down, the camera tours
  * the states one at a time, and a state picked in the quote form is brought into focus.
  */
 
@@ -28,17 +29,21 @@ const smooth = (t: number) => t * t * (3 - 2 * t);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 type Pt = { x: number; z: number };
-/** p: progress through the hero; tour: point the states tour is looking at; pick: state chosen in the quote form. */
-type Ctx = { p: number; tour: Pt; pick: Pt | null };
+/**
+ * p: how far the states have connected in the hero; r: how far the map has come in (0 on the first screen);
+ * tour: point the states tour is looking at; pick: state chosen in the quote form.
+ */
+type Ctx = { p: number; r: number; tour: Pt; pick: Pt | null };
 type CueSet = Record<string, (mobile: boolean, c: Ctx) => Cue>;
 
 const CUES: CueSet = {
-  // While the hero scrolls, the camera orbits and pushes in as the states connect.
-  hero: (m, { p }) => {
+  // The map drops in from above as it appears, then the camera orbits and pushes in as the states connect.
+  hero: (m, { p, r }) => {
     const e = smooth(p);
+    const away = 1 - r;
     return m
-      ? { polar: lerp(44, 38, e), azimuth: lerp(-8, 12, e), distance: lerp(34, 30, e), tx: -0.1, tz: 0.3, ox: 0, oy: lerp(-0.14, 0.03, e), explode: 0, dim: 0 }
-      : { polar: lerp(52, 42, e), azimuth: lerp(-20, 8, e), distance: lerp(21, 15.5, e), tx: 0.4, tz: 0.2, ox: lerp(0.2, 0.06, e), oy: 0.02, explode: 0, dim: 0 };
+      ? { polar: lerp(40, 36, e) - away * 14, azimuth: lerp(-10, 10, e), distance: lerp(36, 33, e) + away * 10, tx: 0, tz: 0.3, ox: 0, oy: -0.07, explode: 0, dim: 0 }
+      : { polar: lerp(46, 40, e) - away * 14, azimuth: lerp(-16, 8, e), distance: lerp(19, 16, e) + away * 6, tx: 0.2, tz: 0.2, ox: 0, oy: 0, explode: 0, dim: 0 };
   },
   pinned: (m) =>
     m
@@ -123,8 +128,7 @@ export class MapEngine {
   private fly = new Float32Array(FLY_FROM.length * 2);
   private v3 = new THREE.Vector3();
   private ripples: { x: number; z: number; t: number }[] = [];
-  private ray = new THREE.Raycaster();
-  private ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  private reveal = 0;
 
   private fpsFrames = 0;
   private fpsTime = 0;
@@ -152,7 +156,7 @@ export class MapEngine {
     this.baseX = new Float32Array(0);
     this.buildMap();
     this.buildFloorGlow();
-    this.cur = CUES.hero(this.mobile, { p: 0, tour: { x: 0, z: 0 }, pick: null });
+    this.cur = CUES.hero(this.mobile, { p: 0, r: 0, tour: { x: 0, z: 0 }, pick: null });
 
     this.resize(true);
     this.measureAnchors();
@@ -160,7 +164,6 @@ export class MapEngine {
     window.addEventListener("resize", this.onResize);
     window.addEventListener("pointermove", this.onPointer, { passive: true });
     window.addEventListener("asfra:pick", this.onPick as EventListener);
-    window.addEventListener("asfra:ripple", this.onRipple as EventListener);
     this.renderer.compileAsync(this.scene, this.camera).catch(() => {});
     this.clock.start();
     this.loop();
@@ -346,15 +349,6 @@ export class MapEngine {
     this.pick = this.data.nodes.findIndex((n) => n.code === e.detail);
   };
 
-  /** A ripple starts where a screen point (e.g. the hero's quote button) meets the map's floor. */
-  private onRipple = (e: CustomEvent<{ x: number; y: number }>) => {
-    this.camera.updateMatrixWorld();
-    this.ray.setFromCamera(new THREE.Vector2((e.detail.x / this.width) * 2 - 1, 1 - (e.detail.y / this.height) * 2), this.camera);
-    if (!this.ray.ray.intersectPlane(this.ground, this.v3)) return;
-    this.ripples.push({ x: this.v3.x, z: this.v3.z, t: this.clock.elapsedTime });
-    if (this.ripples.length > 4) this.ripples.shift();
-  };
-
   /** Height of the ripples passing over a point: rings that travel outward and fade. */
   private rippleAt(x: number, z: number, time: number) {
     let a = 0;
@@ -424,9 +418,13 @@ export class MapEngine {
   };
 
   private update(dt: number, time: number) {
-    // Hero scroll progress: drives the connection and the hero camera move.
+    // Hero: the first screen is copy only. Scrolling brings the map in (reveal), then connects the states.
     const span = this.heroSpan();
-    const p = clamp01(window.scrollY / span);
+    const vh0 = window.innerHeight;
+    const onHome = this.anchors[0]?.id === "hero";
+    const revealTarget = onHome ? smooth(clamp01((window.scrollY - vh0 * 0.1) / (vh0 * 0.4))) : 1;
+    this.reveal = lerp(this.reveal, revealTarget, 1 - Math.exp(-dt * 8));
+    const p = clamp01((window.scrollY - vh0 * 0.45) / Math.max(1, span - vh0 * 0.45));
     this.energy = lerp(this.energy, p, 1 - Math.exp(-dt * 6));
 
     // States tour: dwell on each state, travel between neighbours.
@@ -437,7 +435,7 @@ export class MapEngine {
     const a0 = this.statePt(i0);
     const a1 = this.statePt(i0 + 1);
     const tour = { x: lerp(a0.x, a1.x, step), z: lerp(a0.z, a1.z, step) };
-    const ctx: Ctx = { p, tour, pick: this.pick >= 0 ? this.statePt(this.pick) : null };
+    const ctx: Ctx = { p, r: this.reveal, tour, pick: this.pick >= 0 ? this.statePt(this.pick) : null };
 
     // Camera eases toward the scroll cue.
     const target = this.targetCue(ctx);
@@ -460,7 +458,7 @@ export class MapEngine {
     this.camera.lookAt(c.tx, ty, c.tz);
     this.camera.setViewOffset(this.width, this.height, -c.ox * this.width, c.oy * this.height, this.width, this.height);
     // Fades in on load, then fades toward the white page behind text-heavy sections.
-    this.canvas.style.opacity = String(Math.min(1, time * 1.2) * (1 - c.dim * 0.88));
+    this.canvas.style.opacity = String(Math.min(1, time * 1.2) * this.reveal * (1 - c.dim * 0.88));
     // Fog follows the camera, so a far camera (phones) doesn't wash the whole map out to white.
     const fog = this.scene.fog as THREE.Fog;
     fog.near = dist - 2;
@@ -495,7 +493,13 @@ export class MapEngine {
     // and lights the state at its end, west to east, until all of them are connected.
     const steps = this.states.length;
     const reach = 1 + clamp01(this.energy * 1.08) * (steps - 1); // continuous count of connected states
-    this.lit = Math.min(steps, Math.floor(reach + 1e-4));
+    const lit = Math.min(steps, Math.floor(reach + 1e-4));
+    // Each newly connected state sends a ripple across the map.
+    for (let s = this.lit; s < lit; s++) {
+      if (this.reveal > 0.5) this.ripples.push({ ...this.statePt(s), t: time });
+    }
+    if (this.ripples.length > 5) this.ripples.splice(0, this.ripples.length - 5);
+    this.lit = lit;
 
     // Which state is in focus: the one the tour is on, or the one picked in the form.
     const vh = window.innerHeight;
@@ -581,7 +585,7 @@ export class MapEngine {
     this.emitFly(span);
 
     // The on-screen counter follows along; it hides once the page has moved past the hero.
-    const show = this.intro > 0.6 && window.scrollY < span + window.innerHeight * 0.25;
+    const show = this.intro > 0.6 && this.reveal > 0.9 && window.scrollY < span + window.innerHeight * 0.25;
     const key = `${Math.round(this.energy * 100)}|${this.lit}|${show}`;
     if (key !== this.lastEmit) {
       this.lastEmit = key;
@@ -635,7 +639,6 @@ export class MapEngine {
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("pointermove", this.onPointer);
     window.removeEventListener("asfra:pick", this.onPick as EventListener);
-    window.removeEventListener("asfra:ripple", this.onRipple as EventListener);
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
       m.geometry?.dispose();
