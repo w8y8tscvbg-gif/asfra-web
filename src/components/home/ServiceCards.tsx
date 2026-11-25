@@ -66,7 +66,7 @@ export function ServiceCards({ cards, viewLabel }: { cards: Card[]; viewLabel: s
           <li key={c.slug}>
             <Link
               href={c.href}
-              className="spot group flex h-full min-h-48 flex-col justify-between rounded-[22px] bg-deep/40 p-6 transition-colors duration-300 hover:bg-deep/60 sm:min-h-60 sm:p-7"
+              className="spot group flex h-full min-h-48 flex-col justify-between rounded-[22px] bg-deep/40 p-6 backdrop-blur-md transition-colors duration-300 hover:bg-deep/60 sm:min-h-60 sm:p-7"
             >
               <div className="flex items-start justify-between">
                 <span className="grid size-12 place-items-center rounded-2xl bg-royal/15 text-royal-400">

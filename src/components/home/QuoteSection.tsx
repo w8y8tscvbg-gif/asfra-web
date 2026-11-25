@@ -21,7 +21,7 @@ export function QuoteSection({
   defaultService?: ServiceSlug;
 }) {
   return (
-    <section id="cotizar" className="scroll-mt-28 py-24 pb-32 sm:py-32">
+    <section id="cotizar" data-cue="quote" className="scroll-mt-28 py-24 pb-32 sm:py-32">
       <div className={`${container} grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:gap-16`}>
         <div>
           <p className="eyebrow">{t.quote.eyebrow}</p>
@@ -30,7 +30,7 @@ export function QuoteSection({
           </RevealText>
           <p className="mt-5 max-w-sm text-lg text-white/70">{t.quote.lead}</p>
         </div>
-        <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-6 sm:p-9">
+        <div className="rounded-[28px] border border-white/10 bg-navy/70 p-6 backdrop-blur-xl sm:p-9">
           <QuoteForm
             lang={lang}
             t={{ quote: t.quote, validation: t.validation }}

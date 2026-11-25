@@ -7,16 +7,18 @@ import { btn, container } from "@/components/ui/styles";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/es";
 import { getUsMap } from "@/lib/usMap";
+import { HoldToConnect } from "@/components/scene/HoldToConnect";
 import { UsNetworkMap } from "./UsNetworkMap";
 
 export function Hero({ lang, t }: { lang: Locale; t: Dictionary }) {
   const map = getUsMap();
   return (
-    <section className="relative isolate overflow-hidden pb-16 pt-36 sm:pt-44 lg:min-h-[100svh] lg:pb-24">
+    <section data-cue="hero" className="relative isolate overflow-hidden pb-16 pt-36 sm:pt-44 lg:min-h-[100svh] lg:pb-24">
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-[radial-gradient(90%_60%_at_80%_10%,#0a2f87_0%,rgba(14,26,61,0)_60%),radial-gradient(60%_50%_at_10%_90%,rgba(0,93,255,.18)_0%,rgba(14,26,61,0)_70%)]"
+        className="hero-glow absolute inset-0 -z-10 transition-opacity duration-1000 bg-[radial-gradient(90%_60%_at_80%_10%,#0a2f87_0%,rgba(14,26,61,0)_60%),radial-gradient(60%_50%_at_10%_90%,rgba(0,93,255,.18)_0%,rgba(14,26,61,0)_70%)]"
       />
+      <div aria-hidden className="hero-scrim pointer-events-none absolute inset-0 -z-10" />
       <div className={`${container} grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-6`}>
         <div className="relative z-10">
           <Reveal onMount delay={0.2} y={12}>
@@ -53,7 +55,13 @@ export function Hero({ lang, t }: { lang: Locale; t: Dictionary }) {
         </div>
 
         <div className="relative -mx-5 sm:mx-0 lg:-mr-16">
-          <UsNetworkMap data={map} label={t.hero.mapLabel} play="mount" />
+          {/* Flat map: shown until the live 3D map takes over (or instead of it on devices without WebGL). */}
+          <div className="map-fallback">
+            <UsNetworkMap data={map} label={t.hero.mapLabel} play="mount" />
+          </div>
+          <div className="mt-2 flex justify-center lg:absolute lg:-bottom-6 lg:left-1/2 lg:mt-0 lg:-translate-x-1/2">
+            <HoldToConnect label={t.hero.hold} done={t.hero.holdDone} />
+          </div>
         </div>
       </div>
     </section>

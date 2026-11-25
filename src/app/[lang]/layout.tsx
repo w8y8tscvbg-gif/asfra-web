@@ -86,7 +86,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
         />
         <SmoothScroll />
         <Header lang={lang} t={{ announcement: t.announcement, announcementClose: t.announcementClose, nav: t.nav }} />
-        <main id="contenido">{children}</main>
+        <main id="contenido" className="relative z-10">{children}</main>
         <Footer lang={lang} t={t} />
         <WhatsAppFab label={t.whatsappFab} text={t.quote.whatsappText} />
       </body>

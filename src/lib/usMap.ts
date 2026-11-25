@@ -18,7 +18,12 @@ export type UsMapData = {
   nodes: { code: StateCode; x: number; y: number }[];
   /** Curved connections between active states, west to east. */
   links: string[];
+  /** Flat [x, y, state] triples for the 3D map; state is the index in STATES, or -1. */
+  grid: number[];
 };
+
+/** Data the 3D map needs on the client. */
+export type Map3DData = Pick<UsMapData, "width" | "height" | "grid" | "nodes">;
 
 const WIDTH = 975;
 const HEIGHT = 610;
@@ -46,6 +51,8 @@ export function getUsMap(): UsMapData {
 
   let base = "";
   const activeDots = new Map<StateCode, string>();
+  const grid: number[] = [];
+  const stateIndex = new Map<StateCode, number>(STATES.map((s, i) => [s.code, i]));
 
   for (let y = STEP / 2; y < HEIGHT; y += STEP) {
     for (let x = STEP / 2; x < WIDTH; x += STEP) {
@@ -56,6 +63,7 @@ export function getUsMap(): UsMapData {
       const seg = `M${x} ${y}h0`;
       if (hit.code) activeDots.set(hit.code, (activeDots.get(hit.code) ?? "") + seg);
       else base += seg;
+      grid.push(x, y, hit.code ? stateIndex.get(hit.code)! : -1);
     }
   }
 
@@ -90,6 +98,7 @@ export function getUsMap(): UsMapData {
     active: STATES.map((s) => ({ code: s.code, d: activeDots.get(s.code) ?? "" })),
     nodes,
     links,
+    grid,
   };
   return cache;
 }

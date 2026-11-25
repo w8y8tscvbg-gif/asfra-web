@@ -77,7 +77,7 @@ export function PinnedServices({ items, eyebrow, progress }: { items: Item[]; ey
   }, [items.length, progress]);
 
   return (
-    <section ref={root} aria-label={eyebrow} className="relative bg-navy motion-reduce:py-20">
+    <section ref={root} aria-label={eyebrow} data-cue="pinned" className="relative motion-reduce:py-20">
       {/* Animated, pinned stage */}
       <div className="flex h-[100svh] flex-col justify-center gap-3 py-24 motion-reduce:hidden sm:gap-4">
         <div className={`${container} flex h-full max-h-[760px] flex-col gap-3 sm:gap-4`}>

@@ -23,6 +23,7 @@
     "react-hook-form": "^7.92.0",
     "server-only": "^0.0.1",
     "simple-icons": "^16.38.1",
+    "three": "^0.187.0",
     "topojson-client": "^3.1.0",
     "us-atlas": "^3.0.1",
     "zod": "^4.6.7"
@@ -33,6 +34,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.187.0",
     "@types/topojson-client": "^3.1.5",
     "@types/topojson-specification": "^1.0.5",
     "eslint": "^9",

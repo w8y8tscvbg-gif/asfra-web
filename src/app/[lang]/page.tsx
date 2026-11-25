@@ -7,11 +7,13 @@ import { QuoteSection } from "@/components/home/QuoteSection";
 import { ServiceCards } from "@/components/home/ServiceCards";
 import { StatesSection } from "@/components/home/StatesSection";
 import { RevealText } from "@/components/motion/RevealText";
+import { MapScene } from "@/components/scene/MapScene";
 import { container } from "@/components/ui/styles";
 import { hasLocale, localePath } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { alternates } from "@/lib/seo";
 import { SERVICE_SLUGS } from "@/lib/site";
+import { getUsMap } from "@/lib/usMap";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]">): Promise<Metadata> {
   const { lang } = await params;
@@ -38,12 +40,16 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
     short: t.serviceList[slug].short,
   }));
 
+  const map = getUsMap();
+  const map3d = { width: map.width, height: map.height, grid: map.grid, nodes: map.nodes };
+
   return (
     <>
+      <MapScene data={map3d} />
       <Hero lang={lang} t={t} />
       <PinnedServices items={items} eyebrow={t.pinned.eyebrow} progress={t.pinned.progress} />
 
-      <section id="servicios" className="scroll-mt-28 py-24 sm:py-32">
+      <section id="servicios" data-cue="services" className="scroll-mt-28 py-24 sm:py-32">
         <div className={container}>
           <p className="eyebrow">{t.services.eyebrow}</p>
           <RevealText as="h2" className="mb-12 mt-4 max-w-3xl text-[2.6rem] leading-none sm:text-6xl">

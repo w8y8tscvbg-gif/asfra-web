@@ -19,9 +19,9 @@ function Row({ children }: { children: React.ReactNode }) {
 
 export function Audiences({ lang, t }: { lang: Locale; t: Dictionary }) {
   return (
-    <section className="py-24 sm:py-32">
+    <section data-cue="audiences" className="py-24 sm:py-32">
       <div className={`${container} grid gap-6 lg:grid-cols-2`}>
-        <article className="rounded-[28px] border border-white/10 bg-white/[0.03] p-7 sm:p-10">
+        <article className="rounded-[28px] border border-white/10 bg-navy/55 p-7 backdrop-blur-xl sm:p-10">
           <p className="eyebrow">{t.audiences.you.eyebrow}</p>
           <RevealText as="h2" className="mt-4 text-[2.1rem] leading-[1.02] sm:text-5xl">
             {t.audiences.you.title}

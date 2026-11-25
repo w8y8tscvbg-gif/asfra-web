@@ -37,6 +37,8 @@ const en: Dictionary = {
     ctaPrimary: "Get a quote",
     ctaSecondary: "I'm an insurance agency",
     mapLabel: "Map of the U.S. showing the 13 states where ASFRA works",
+    hold: "Hold to connect",
+    holdDone: "13 states connected",
   },
   pinned: {
     eyebrow: "ASFRA · Everything in one place",

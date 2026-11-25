@@ -14,7 +14,7 @@ export function StatesSection({ t }: { t: Dictionary }) {
     { value: 2, label: t.states.counters.languages },
   ];
   return (
-    <section id="estados" className="relative overflow-hidden border-y border-white/10 bg-ink py-24 sm:py-32">
+    <section id="estados" data-cue="states" className="relative overflow-hidden border-y border-white/10 py-24 sm:py-32">
       <div className={container}>
         <p className="eyebrow">{t.states.eyebrow}</p>
         <RevealText as="h2" className="mt-4 text-[2.6rem] leading-none sm:text-6xl lg:text-7xl">
@@ -22,11 +22,11 @@ export function StatesSection({ t }: { t: Dictionary }) {
         </RevealText>
 
         <div className="mt-12 grid items-center gap-12 lg:grid-cols-[1.6fr_1fr]">
-          <UsNetworkMap data={map} label={t.hero.mapLabel} showLabels />
+          <div className="map-fallback"><UsNetworkMap data={map} label={t.hero.mapLabel} showLabels /></div>
           <div>
             <dl className="grid grid-cols-3 gap-3 lg:grid-cols-1">
               {counters.map((c) => (
-                <div key={c.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6">
+                <div key={c.label} className="rounded-2xl border border-white/10 bg-navy/55 p-4 backdrop-blur-md sm:p-6">
                   <dt className="sr-only">{c.label}</dt>
                   <dd>
                     <Counter value={c.value} className="block font-display text-5xl font-bold leading-none text-royal-400 sm:text-7xl" />

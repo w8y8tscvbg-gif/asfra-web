@@ -183,6 +183,36 @@ html.js-motion .usmap[data-animate] .m-link {
 .usmap .m-ring {
   opacity: 0;
 }
+/* 3D scene: the canvas fades in once the engine runs; flat maps stay as the fallback */
+.scene-canvas {
+  opacity: 0;
+  transition: opacity 1.4s var(--ease-brand);
+}
+html.has-3d .scene-canvas {
+  opacity: 1;
+}
+html.has-3d .map-fallback {
+  visibility: hidden;
+}
+html.has-3d .hero-glow {
+  opacity: 0;
+}
+/* Keeps the headline readable over the live map */
+html.has-3d .hero-scrim {
+  background: linear-gradient(180deg, rgba(14, 26, 61, 0.9) 0%, rgba(14, 26, 61, 0.72) 48%, rgba(14, 26, 61, 0) 72%);
+}
+@media (min-width: 1024px) {
+  html.has-3d .hero-scrim {
+    background: linear-gradient(90deg, rgba(14, 26, 61, 0.92) 0%, rgba(14, 26, 61, 0.7) 36%, rgba(14, 26, 61, 0) 60%);
+  }
+}
+.needs-3d {
+  display: none !important;
+}
+html.has-3d .needs-3d {
+  display: inline-flex !important;
+}
+
 .p-phrase:not(:first-child),
 .p-icon:not(:first-child) {
   opacity: 0;
