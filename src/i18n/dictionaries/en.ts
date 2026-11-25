@@ -33,6 +33,8 @@ const en: Dictionary = {
   hero: {
     eyebrow: "Marketing & Customer Acquisition Solutions",
     title: "Solutions for you and your business",
+    titleLead: "Solutions for you and your",
+    titleWords: ["business", "agency", "family", "car"],
     subtitle: "Every service you need, in one place.",
     ctaPrimary: "Get a quote",
     ctaSecondary: "I'm an insurance agency",

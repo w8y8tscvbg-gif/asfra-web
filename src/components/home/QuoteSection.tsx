@@ -32,10 +32,10 @@ export function QuoteSection({
           <RevealText as="h2" className="mt-4 text-[2.6rem] leading-none sm:text-6xl">
             {title ?? t.quote.title}
           </RevealText>
-          <p className="mt-5 max-w-sm text-lg text-white/70">{t.quote.lead}</p>
+          <p className="mt-5 max-w-sm text-lg text-navy/70">{t.quote.lead}</p>
           {brand ? <LogoTurn /> : null}
         </div>
-        <div data-line-end className="rounded-[28px] border border-white/10 bg-navy/70 p-6 backdrop-blur-xl sm:p-9">
+        <div data-line-end className="rounded-[28px] border border-navy/10 bg-white/70 p-6 backdrop-blur-xl sm:p-9">
           <QuoteForm
             lang={lang}
             t={{ quote: t.quote, validation: t.validation }}

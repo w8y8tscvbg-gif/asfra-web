@@ -24,7 +24,7 @@ export function AgencyRegister({
   const [selected, setSelected] = useState<StateCode | null>(null);
   return (
     <div className="grid items-start gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-6 sm:p-9">
+      <div className="rounded-[28px] border border-navy/10 bg-navy/[0.03] p-6 sm:p-9">
         <h2 className="text-3xl leading-tight sm:text-4xl">{t.agencyForm.title}</h2>
         <div className="mt-7">
           <AgencyForm lang={lang} t={t} onStateChange={setSelected} />

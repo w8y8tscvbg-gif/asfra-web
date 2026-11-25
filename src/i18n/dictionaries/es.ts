@@ -31,6 +31,8 @@ const es = {
   hero: {
     eyebrow: "Marketing & Customer Acquisition Solutions",
     title: "Soluciones para ti y tu negocio",
+    titleLead: "Soluciones para ti y tu",
+    titleWords: ["negocio", "agencia", "familia", "auto"],
     subtitle: "Todos los servicios que necesitas, en un solo lugar.",
     ctaPrimary: "Cotizar ahora",
     ctaSecondary: "Soy agencia de seguros",

@@ -117,10 +117,10 @@ export function ScrollLine() {
       className="scroll-line pointer-events-none absolute left-0 top-0 z-[1] w-full overflow-visible motion-reduce:hidden"
       preserveAspectRatio="none"
     >
-      <path className="sl-glow" fill="none" stroke="#4d8dff" strokeWidth="7" strokeOpacity="0.22" strokeLinecap="round" />
-      <path className="sl-line" fill="none" stroke="#4d8dff" strokeWidth="1.6" strokeLinecap="round" />
+      <path className="sl-glow" fill="none" stroke="#005dff" strokeWidth="7" strokeOpacity="0.12" strokeLinecap="round" />
+      <path className="sl-line" fill="none" stroke="#005dff" strokeWidth="1.6" strokeLinecap="round" />
       <g className="sl-dots" />
-      <circle className="sl-head" r="4.5" fill="#fff" />
+      <circle className="sl-head" r="4.5" fill="#005dff" />
     </svg>
   );
 }

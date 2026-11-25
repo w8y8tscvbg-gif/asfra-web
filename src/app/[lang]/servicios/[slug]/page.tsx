@@ -45,7 +45,7 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/servici
   return (
     <>
       <section className="relative isolate overflow-hidden pb-16 pt-40 sm:pt-48">
-        <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(80%_60%_at_85%_0%,#0a2f87_0%,rgba(14,26,61,0)_65%)]" />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(80%_60%_at_85%_0%,rgba(0,93,255,.10)_0%,rgba(255,255,255,0)_65%)]" />
         <div className={container}>
           <Reveal onMount y={12}>
             <span className="grid size-16 place-items-center rounded-2xl bg-royal text-white">
@@ -57,7 +57,7 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/servici
             {s.name}
           </RevealText>
           <Reveal onMount delay={0.6}>
-            <p className="mt-6 max-w-xl text-xl text-white/75">{s.description}</p>
+            <p className="mt-6 max-w-xl text-xl text-navy/75">{s.description}</p>
           </Reveal>
         </div>
       </section>
@@ -69,10 +69,10 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/servici
           </RevealText>
           <Reveal as="ol" stagger={0.08} className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {t.servicePage.steps.map((step, i) => (
-              <li key={step.title} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-6">
-                <span className="font-display text-sm text-royal-400">0{i + 1}</span>
+              <li key={step.title} className="rounded-[22px] border border-navy/10 bg-navy/[0.03] p-6">
+                <span className="font-display text-sm text-royal">0{i + 1}</span>
                 <h3 className="mt-6 text-xl">{step.title}</h3>
-                <p className="mt-2 text-[15px] text-white/65">{step.text}</p>
+                <p className="mt-2 text-[15px] text-navy/65">{step.text}</p>
               </li>
             ))}
           </Reveal>
@@ -81,7 +81,7 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/servici
 
       <QuoteSection lang={lang} t={t} title={t.servicePage.quoteTitle} defaultService={slug} />
 
-      <section className="border-t border-white/10 py-20">
+      <section className="border-t border-navy/10 py-20">
         <div className={container}>
           <p className="eyebrow">{t.services.otherServices}</p>
           <ul className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
@@ -91,13 +91,13 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/servici
                 <li key={o}>
                   <Link
                     href={localePath(lang, `/servicios/${o}`)}
-                    className="group flex h-full items-center justify-between gap-3 rounded-2xl border border-white/10 px-5 py-4 transition-colors hover:border-royal hover:bg-royal/10"
+                    className="group flex h-full items-center justify-between gap-3 rounded-2xl border border-navy/10 px-5 py-4 transition-colors hover:border-royal hover:bg-royal/10"
                   >
                     <span className="flex items-center gap-3">
-                      <OIcon className="size-5 text-royal-400" aria-hidden />
+                      <OIcon className="size-5 text-royal" aria-hidden />
                       {t.serviceList[o].name}
                     </span>
-                    <ArrowUpRight className="size-4 text-white/50 group-hover:text-white" aria-hidden />
+                    <ArrowUpRight className="size-4 text-navy/50 group-hover:text-navy" aria-hidden />
                   </Link>
                 </li>
               );

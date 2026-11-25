@@ -27,7 +27,7 @@ export function StateTour({ names, codes }: { names: string[]; codes: string[] }
       aria-hidden="true"
       className={`needs-3d pointer-events-none absolute left-0 top-0 flex-col transition-opacity duration-500 ${i >= 0 ? "opacity-100" : "opacity-0"}`}
     >
-      <span className="font-display text-xs tracking-[0.16em] text-royal-400">
+      <span className="font-display text-xs tracking-[0.16em] text-royal">
         {String(Math.max(0, i) + 1).padStart(2, "0")} / {total}
       </span>
       <span className="mt-1 block overflow-hidden pb-[0.1em]">

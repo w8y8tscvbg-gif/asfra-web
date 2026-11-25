@@ -87,7 +87,7 @@ export function Header({ lang, t }: Props) {
       >
         <nav
           aria-label="Principal"
-          className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 rounded-2xl border border-white/10 bg-navy/75 pl-4 pr-2 shadow-[0_20px_50px_-25px_rgba(0,0,0,.8)] backdrop-blur-xl"
+          className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 rounded-2xl border border-navy/10 bg-white/75 pl-4 pr-2 shadow-[0_20px_50px_-25px_rgba(14,26,61,.28)] backdrop-blur-xl"
         >
           <Link href={home} aria-label={t.nav.home} className="flex items-center">
             <Logo priority />
@@ -96,7 +96,7 @@ export function Header({ lang, t }: Props) {
           <ul className="hidden items-center gap-1 md:flex">
             {links.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="rounded-full px-4 py-2 text-[15px] text-white/80 transition-colors hover:text-white">
+                <Link href={l.href} className="rounded-full px-4 py-2 text-[15px] text-navy/80 transition-colors hover:text-navy">
                   {l.label}
                 </Link>
               </li>
@@ -108,11 +108,11 @@ export function Header({ lang, t }: Props) {
               href={switchHref}
               hrefLang={otherLang}
               aria-label={`${t.nav.language}: ${otherLang.toUpperCase()}`}
-              className="hidden h-10 items-center rounded-full border border-white/10 px-3 text-[13px] font-semibold sm:flex"
+              className="hidden h-10 items-center rounded-full border border-navy/10 px-3 text-[13px] font-semibold sm:flex"
             >
-              <span className={lang === "es" ? "text-white" : "text-white/45"}>ES</span>
-              <span className="px-1 text-white/30">/</span>
-              <span className={lang === "en" ? "text-white" : "text-white/45"}>EN</span>
+              <span className={lang === "es" ? "text-navy" : "text-navy/45"}>ES</span>
+              <span className="px-1 text-navy/30">/</span>
+              <span className={lang === "en" ? "text-navy" : "text-navy/45"}>EN</span>
             </Link>
             <Magnetic strength={0.25}>
               <Link href={quoteHref} className={`${btn.primary} !min-h-11 !px-5`}>
@@ -125,7 +125,7 @@ export function Header({ lang, t }: Props) {
               aria-label={t.nav.menu}
               aria-expanded={menuOpen}
               aria-controls="menu-movil"
-              className="grid size-11 place-items-center rounded-xl bg-white/8 md:hidden"
+              className="grid size-11 place-items-center rounded-xl bg-navy/[0.05] md:hidden"
             >
               <Menu className="size-5" aria-hidden />
             </button>
@@ -140,7 +140,7 @@ export function Header({ lang, t }: Props) {
             role="dialog"
             aria-modal="true"
             aria-label={t.nav.menu}
-            className="fixed inset-0 z-[70] flex flex-col bg-navy"
+            className="fixed inset-0 z-[70] flex flex-col bg-white"
             initial={reduce ? { opacity: 0 } : { clipPath: "inset(0 0 100% 0)" }}
             animate={reduce ? { opacity: 1 } : { clipPath: "inset(0 0 0% 0)" }}
             exit={reduce ? { opacity: 0 } : { clipPath: "inset(0 0 100% 0)" }}
@@ -152,7 +152,7 @@ export function Header({ lang, t }: Props) {
                 type="button"
                 onClick={() => setMenuOpen(false)}
                 aria-label={t.nav.close}
-                className="grid size-11 place-items-center rounded-xl bg-white/8"
+                className="grid size-11 place-items-center rounded-xl bg-navy/[0.05]"
               >
                 <X className="size-5" aria-hidden />
               </button>
@@ -169,22 +169,22 @@ export function Header({ lang, t }: Props) {
                     <Link
                       href={l.href}
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-between border-b border-white/10 py-4 font-display text-4xl font-bold tracking-tight"
+                      className="flex items-center justify-between border-b border-navy/10 py-4 font-display text-4xl font-bold tracking-tight"
                     >
                       {l.label}
-                      <ArrowUpRight className="size-7 text-royal-400" aria-hidden />
+                      <ArrowUpRight className="size-7 text-royal" aria-hidden />
                     </Link>
                   </motion.span>
                 </li>
               ))}
             </ul>
-            <div className="flex items-center justify-between px-6 pb-10 text-sm text-white/70">
+            <div className="flex items-center justify-between px-6 pb-10 text-sm text-navy/70">
               <span>{t.nav.language}</span>
               <Link
                 href={switchHref}
                 hrefLang={otherLang}
                 onClick={() => setMenuOpen(false)}
-                className="rounded-full border border-white/15 px-4 py-2 font-semibold text-white"
+                className="rounded-full border border-navy/15 px-4 py-2 font-semibold text-navy"
               >
                 {lang === "es" ? "English" : "Español"}
               </Link>

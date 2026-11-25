@@ -10,7 +10,7 @@ import { contact, SERVICE_SLUGS } from "@/lib/site";
 
 export function Footer({ lang, t }: { lang: Locale; t: Dictionary }) {
   return (
-    <footer className="relative z-10 overflow-hidden border-t border-white/10 bg-ink pb-28 pt-20 sm:pb-16">
+    <footer className="relative z-10 overflow-hidden border-t border-white/10 bg-ink pb-28 text-white pt-20 sm:pb-16">
       <div className={container}>
         <RevealText
           as="p"

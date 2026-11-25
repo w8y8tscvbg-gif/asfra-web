@@ -66,18 +66,18 @@ export function ServiceCards({ cards, viewLabel }: { cards: Card[]; viewLabel: s
           <li key={c.slug}>
             <Link
               href={c.href}
-              className="spot group flex h-full min-h-48 flex-col justify-between rounded-[22px] bg-deep/40 p-6 backdrop-blur-md transition-colors duration-300 hover:bg-deep/60 sm:min-h-60 sm:p-7"
+              className="spot group flex h-full min-h-48 flex-col justify-between rounded-[22px] bg-royal/[0.05] p-6 backdrop-blur-md transition-colors duration-300 hover:bg-royal/[0.09] sm:min-h-60 sm:p-7"
             >
               <div className="flex items-start justify-between">
-                <span className="grid size-12 place-items-center rounded-2xl bg-royal/15 text-royal-400">
+                <span className="grid size-12 place-items-center rounded-2xl bg-royal/15 text-royal">
                   <Icon className="size-6" strokeWidth={1.6} aria-hidden />
                 </span>
-                <span className="font-display text-sm text-white/40">0{i + 1}</span>
+                <span className="font-display text-sm text-navy/40">0{i + 1}</span>
               </div>
               <div className="mt-10">
                 <h3 className="text-2xl leading-tight">{c.name}</h3>
-                <p className="mt-1.5 text-[15px] text-white/65">{c.short}</p>
-                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-royal-400">
+                <p className="mt-1.5 text-[15px] text-navy/65">{c.short}</p>
+                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-royal">
                   {viewLabel}
                   <ArrowUpRight className="size-4 transition-transform duration-300 ease-brand group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
                 </span>

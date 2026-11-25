@@ -20,7 +20,7 @@ export function SloganTicker({ items }: { items: string[] }) {
   return (
     <span aria-hidden="true" className="needs-3d items-center gap-3">
       <span className="h-3 w-px bg-white/25" />
-      <span className="relative inline-block h-[1.4em] overflow-hidden text-white">
+      <span className="relative inline-block h-[1.4em] overflow-hidden text-navy">
         <span className="flex flex-col transition-transform duration-500 ease-brand" style={{ transform: `translateY(${-i * 1.4}em)` }}>
           {items.map((it) => (
             <span key={it} className="block h-[1.4em] whitespace-nowrap leading-[1.4em]">

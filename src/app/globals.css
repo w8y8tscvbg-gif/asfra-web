@@ -15,17 +15,17 @@
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html {
-  background: var(--color-navy);
+  background: #fff;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--color-navy);
-  color: #fff;
+  background: #fff;
+  color: var(--color-navy);
   font-family: var(--font-sans);
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
@@ -72,7 +72,7 @@ html.lenis body {
   font-size: 0.75rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-royal-400);
+  color: var(--color-royal);
 }
 
 /* Crosshair corners for framed panels */
@@ -122,7 +122,7 @@ html.lenis body {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: radial-gradient(220px circle at var(--x) var(--y), var(--color-royal-400), rgba(255, 255, 255, 0.1) 60%);
+  background: radial-gradient(220px circle at var(--x) var(--y), var(--color-royal-400), rgba(14, 26, 61, 0.1) 60%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -134,7 +134,7 @@ html.lenis body {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: radial-gradient(240px circle at var(--x) var(--y), rgba(0, 93, 255, 0.28), transparent 65%);
+  background: radial-gradient(240px circle at var(--x) var(--y), rgba(0, 93, 255, 0.14), transparent 65%);
   opacity: var(--o);
   transition: opacity 0.3s var(--ease-brand);
   pointer-events: none;
@@ -183,13 +183,9 @@ html.js-motion .usmap[data-animate] .m-link {
 .usmap .m-ring {
   opacity: 0;
 }
-/* 3D scene: the canvas fades in once the engine runs; flat maps stay as the fallback */
+/* 3D scene: the engine sets the canvas opacity itself (it fades the map behind text); flat maps stay as the fallback */
 .scene-canvas {
   opacity: 0;
-  transition: opacity 1.4s var(--ease-brand);
-}
-html.has-3d .scene-canvas {
-  opacity: 1;
 }
 html.has-3d .map-fallback {
   visibility: hidden;
@@ -199,11 +195,11 @@ html.has-3d .hero-glow {
 }
 /* Keeps the headline readable over the live map */
 html.has-3d .hero-scrim {
-  background: linear-gradient(180deg, rgba(14, 26, 61, 0.9) 0%, rgba(14, 26, 61, 0.72) 48%, rgba(14, 26, 61, 0) 72%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.75) 48%, rgba(255, 255, 255, 0) 72%);
 }
 @media (min-width: 1024px) {
   html.has-3d .hero-scrim {
-    background: linear-gradient(90deg, rgba(14, 26, 61, 0.92) 0%, rgba(14, 26, 61, 0.7) 36%, rgba(14, 26, 61, 0) 60%);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.7) 36%, rgba(255, 255, 255, 0) 60%);
     /* no hard edge when the pinned hero scrolls away */
     -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
     mask-image: linear-gradient(180deg, #000 70%, transparent);
@@ -280,16 +276,16 @@ html.has-3d .states-chips {
   }
 }
 .scroll-line .sl-dot {
-  fill: var(--color-navy);
-  stroke: var(--color-royal-400);
+  fill: #fff;
+  stroke: var(--color-royal);
   stroke-width: 1.5;
   transition: fill 0.3s;
 }
 .scroll-line .sl-dot[data-on="1"] {
-  fill: var(--color-royal-400);
+  fill: var(--color-royal);
 }
 .scroll-line .sl-head {
-  filter: drop-shadow(0 0 6px #4d8dff) drop-shadow(0 0 14px #005dff);
+  filter: drop-shadow(0 0 5px rgba(0, 93, 255, 0.6));
   transition: opacity 0.3s;
 }
 .tour-name {
@@ -312,6 +308,57 @@ html.has-3d .states-chips {
 .scroll-cue > span {
   animation: scroll-cue 1.6s var(--ease-brand) infinite;
 }
+/* Hero title: only the first changing word shows until the script flips them */
+.hrot-w:not(:first-child) .hc {
+  opacity: 0;
+}
+/* A band of light that sweeps across the changing word (screen blend: invisible over the white page) */
+.hrot::after {
+  content: "";
+  position: absolute;
+  inset: -0.05em -0.15em;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.9) 50%, transparent 62%) no-repeat;
+  background-size: 260% 100%;
+  mix-blend-mode: screen;
+  animation: shine 3.4s var(--ease-brand) infinite;
+}
+@keyframes shine {
+  0% {
+    background-position: 130% 0;
+  }
+  55%,
+  100% {
+    background-position: -30% 0;
+  }
+}
+/* Hero quote button: a soft pulse of blue light, stronger when the cursor is near */
+.cta-glow::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  z-index: -1;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgba(0, 93, 255, 0.45), transparent);
+  filter: blur(10px);
+  animation: cta-pulse 2.4s var(--ease-brand) infinite;
+  transition: inset 0.4s var(--ease-brand);
+  pointer-events: none;
+}
+.cta-glow[data-near="1"]::before {
+  inset: -16px;
+}
+@keyframes cta-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
 .needs-3d {
   display: none !important;
 }
@@ -326,7 +373,9 @@ html.has-3d .needs-3d {
 
 @media (prefers-reduced-motion: reduce) {
   .marquee-track,
-  .ring-pulse::after {
+  .ring-pulse::after,
+  .hrot::after,
+  .cta-glow::before {
     animation: none !important;
   }
   html.js-motion [data-reveal] {

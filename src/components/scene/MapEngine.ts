@@ -1,13 +1,10 @@
 import * as THREE from "three";
-import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import type { Map3DData } from "@/lib/usMap";
 
 /**
  * Live 3D map of the U.S. built entirely from code: every grid point is a small metal pillar,
- * the 13 states ASFRA serves are raised in royal blue with glowing caps and joined by arcs of light.
+ * the 13 states ASFRA serves are raised and turn royal blue as they connect, joined by blue arcs.
+ * Drawn on white: "dim" fades the whole canvas toward the white page instead of darkening it.
  * A cue list pinned to page sections ([data-cue]) drives the camera from the scroll, and scrolling
  * through the hero connects the states one by one (no clicks needed). Further down, the camera tours
  * the states one at a time, and a state picked in the quote form is brought into focus.
@@ -22,7 +19,7 @@ export type Cue = {
   ox: number; // screen offset of the map, fraction of width (+ = right)
   oy: number; // screen offset, fraction of height (+ = up)
   explode: number; // 0 together, 1 states lifted apart
-  dim: number; // 0 full, 1 nearly dark (so text on top stays readable)
+  dim: number; // 0 full, 1 nearly faded out (so text on top stays readable)
 };
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
@@ -41,7 +38,7 @@ const CUES: CueSet = {
     const e = smooth(p);
     return m
       ? { polar: lerp(44, 38, e), azimuth: lerp(-8, 12, e), distance: lerp(34, 30, e), tx: -0.1, tz: 0.3, ox: 0, oy: lerp(-0.14, 0.03, e), explode: 0, dim: 0 }
-      : { polar: lerp(52, 42, e), azimuth: lerp(-20, 8, e), distance: lerp(21, 18, e), tx: 0.4, tz: 0.2, ox: 0.2, oy: 0.02, explode: 0, dim: 0 };
+      : { polar: lerp(52, 42, e), azimuth: lerp(-20, 8, e), distance: lerp(21, 15.5, e), tx: 0.4, tz: 0.2, ox: lerp(0.2, 0.06, e), oy: 0.02, explode: 0, dim: 0 };
   },
   pinned: (m) =>
     m
@@ -58,8 +55,8 @@ const CUES: CueSet = {
   quote: (m, { pick }) =>
     pick
       ? m
-        ? { polar: 36, azimuth: 10, distance: 22, tx: pick.x, tz: pick.z, ox: 0, oy: 0.3, explode: 0, dim: 0.62 }
-        : { polar: 36, azimuth: 12, distance: 16, tx: pick.x, tz: pick.z, ox: -0.1, oy: -0.14, explode: 0, dim: 0.62 }
+        ? { polar: 36, azimuth: 10, distance: 22, tx: pick.x, tz: pick.z, ox: 0, oy: 0.3, explode: 0, dim: 0.45 }
+        : { polar: 36, azimuth: 12, distance: 16, tx: pick.x, tz: pick.z, ox: -0.1, oy: -0.14, explode: 0, dim: 0.45 }
       : { polar: 30, azimuth: 20, distance: m ? 42 : 22, tx: 0, tz: 0, ox: 0, oy: 0, explode: 0, dim: 0.9 },
 };
 
@@ -67,9 +64,15 @@ const CUES: CueSet = {
 const FLY_FROM = [0, 1, 4, 7, 10, 12];
 
 const S = 0.012; // world units per map pixel
-const NAVY = new THREE.Color("#0e1a3d");
+const BG = new THREE.Color("#ffffff");
 const ROYAL = new THREE.Color("#005dff");
-const ICE = new THREE.Color("#9cc0ff");
+const BASE = new THREE.Color("#d2dbec"); // the rest of the country
+const CREST = new THREE.Color("#4d8dff"); // a ripple passing over it
+const STATE_OFF = new THREE.Color("#a9bce3"); // a served state not connected yet
+const CAP_OFF = new THREE.Color("#e4ebf7");
+const CAP_ON = new THREE.Color("#6aa5ff");
+const CAP_FOCUS = new THREE.Color("#bcd6ff");
+const RIPPLE_LIFE = 3.2; // seconds
 
 
 type StateGroup = { index: number; instances: number[]; order: number; x: number; z: number };
@@ -78,8 +81,6 @@ export class MapEngine {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(32, 1, 0.1, 120);
-  private composer: EffectComposer | null = null;
-  private bloom: UnrealBloomPass | null = null;
   private clock = new THREE.Clock();
   private raf = 0;
   private disposed = false;
@@ -95,12 +96,12 @@ export class MapEngine {
   private links: { curve: THREE.QuadraticBezierCurve3; mesh: THREE.Mesh; pulse: THREE.Mesh }[] = [];
   private linkGroup = new THREE.Group();
   private linkMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#7fa8ff").multiplyScalar(1.4),
+    color: ROYAL,
     toneMapped: false,
     transparent: true,
-    opacity: 0.95,
+    opacity: 0.9,
   });
-  private nodeMat = new THREE.MeshBasicMaterial({ color: "#ffffff", toneMapped: false });
+  private nodeMat = new THREE.MeshBasicMaterial({ color: ROYAL, toneMapped: false });
 
   private mobile = false;
   private width = 0;
@@ -121,6 +122,9 @@ export class MapEngine {
   private flyOn = false;
   private fly = new Float32Array(FLY_FROM.length * 2);
   private v3 = new THREE.Vector3();
+  private ripples: { x: number; z: number; t: number }[] = [];
+  private ray = new THREE.Raycaster();
+  private ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
   private fpsFrames = 0;
   private fpsTime = 0;
@@ -135,14 +139,14 @@ export class MapEngine {
     private onFail: () => void,
   ) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
-    this.renderer.setClearColor(NAVY, 1);
+    this.renderer.setClearColor(BG, 1);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.1;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.mobile = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
-    this.scene.background = NAVY;
-    this.scene.fog = new THREE.Fog(NAVY, 18, 44);
+    this.scene.background = BG;
+    this.scene.fog = new THREE.Fog(BG, 18, 44);
 
     this.buildStudio();
     this.baseX = new Float32Array(0);
@@ -151,12 +155,12 @@ export class MapEngine {
     this.cur = CUES.hero(this.mobile, { p: 0, tour: { x: 0, z: 0 }, pick: null });
 
     this.resize(true);
-    this.setupPost();
     this.measureAnchors();
 
     window.addEventListener("resize", this.onResize);
     window.addEventListener("pointermove", this.onPointer, { passive: true });
     window.addEventListener("asfra:pick", this.onPick as EventListener);
+    window.addEventListener("asfra:ripple", this.onRipple as EventListener);
     this.renderer.compileAsync(this.scene, this.camera).catch(() => {});
     this.clock.start();
     this.loop();
@@ -165,7 +169,7 @@ export class MapEngine {
   /** Small photo studio (softbox + strips) baked into the environment so the metal has something to reflect. */
   private buildStudio() {
     const studio = new THREE.Scene();
-    studio.background = new THREE.Color("#0a1230");
+    studio.background = new THREE.Color("#eef3ff");
     const panel = (w: number, h: number, intensity: number, pos: [number, number, number], tint = "#ffffff") => {
       const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(tint).multiplyScalar(intensity), side: THREE.DoubleSide });
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
@@ -174,13 +178,13 @@ export class MapEngine {
       studio.add(m);
     };
     panel(22, 14, 3.2, [-22, 20, 20]); // key softbox, off-axis
-    panel(2.4, 34, 7, [30, 4, 12], "#cfe0ff"); // strip, edge line
-    panel(2.4, 34, 4, [-28, 6, -16], "#7fa8ff"); // cool strip, other side
+    panel(2.4, 34, 6, [30, 4, 12], "#ffffff"); // strip, edge line
+    panel(2.4, 34, 1.5, [-28, 6, -16], "#0a2f87"); // dark strip so the metal keeps some depth
     panel(40, 6, 1.2, [0, 30, -10], "#3d6bff"); // overhead blue wash
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(studio, 0.04).texture;
     pmrem.dispose();
-    this.scene.add(new THREE.HemisphereLight("#9db8ff", "#0e1a3d", 0.35));
+    this.scene.add(new THREE.HemisphereLight("#ffffff", "#b8c6e2", 0.8));
   }
 
   private buildMap() {
@@ -194,7 +198,7 @@ export class MapEngine {
     const pillar = new THREE.CylinderGeometry(0.043, 0.047, 1, 10, 1);
     pillar.translate(0, 0.5, 0);
 
-    const baseMat = new THREE.MeshStandardMaterial({ color: "#1c2850", metalness: 0.35, roughness: 0.72, envMapIntensity: 0.45 });
+    const baseMat = new THREE.MeshStandardMaterial({ color: "#ffffff", metalness: 0.2, roughness: 0.6, envMapIntensity: 0.6 });
     this.base = new THREE.InstancedMesh(pillar, baseMat, baseIdx.length);
     this.baseX = new Float32Array(baseIdx.length * 2);
     baseIdx.forEach((gi, k) => {
@@ -202,10 +206,11 @@ export class MapEngine {
       const z = (grid[gi + 1] - cy) * S;
       this.baseX[k * 2] = x;
       this.baseX[k * 2 + 1] = z;
+      this.base.setColorAt(k, BASE);
     });
 
     const activeMat = new THREE.MeshPhysicalMaterial({
-      color: ROYAL,
+      color: "#ffffff", // tinted per pillar: pale until its state connects, then royal
       metalness: 0.92,
       roughness: 0.26,
       clearcoat: 0.7,
@@ -237,7 +242,8 @@ export class MapEngine {
       const state = grid[gi + 2];
       this.activeData.push({ x, z, state, xn: (x - minX) / spanX });
       this.states[state].instances.push(k);
-      this.caps.setColorAt(k, ROYAL);
+      this.active.setColorAt(k, STATE_OFF);
+      this.caps.setColorAt(k, CAP_OFF);
     });
 
     [this.base, this.active, this.caps].forEach((m) => {
@@ -258,14 +264,14 @@ export class MapEngine {
     pinGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(stateCount * 6), 3));
     this.pins = new THREE.LineSegments(
       pinGeo,
-      new THREE.LineBasicMaterial({ color: "#4d8dff", transparent: true, opacity: 0.55 }),
+      new THREE.LineBasicMaterial({ color: ROYAL, transparent: true, opacity: 0.45 }),
     );
     this.pins.frustumCulled = false;
     this.scene.add(this.pins);
 
     const linkMat = this.linkMat;
     const pulseGeo = new THREE.SphereGeometry(0.045, 12, 8);
-    const pulseMat = new THREE.MeshBasicMaterial({ color: new THREE.Color("#cfe0ff").multiplyScalar(1.8), toneMapped: false });
+    const pulseMat = new THREE.MeshBasicMaterial({ color: "#0a2f87", toneMapped: false });
     for (let i = 0; i < stateCount - 1; i++) {
       const a = new THREE.Vector3(this.states[i].x, 0, this.states[i].z);
       const b = new THREE.Vector3(this.states[i + 1].x, 0, this.states[i + 1].z);
@@ -282,40 +288,26 @@ export class MapEngine {
     this.scene.add(this.linkGroup);
   }
 
-  /** Soft blue light pooled under the map. */
+  /** Soft blue shade pooled under the map. */
   private buildFloorGlow() {
     const c = document.createElement("canvas");
     c.width = c.height = 256;
     const g = c.getContext("2d")!;
     const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-    grad.addColorStop(0, "rgba(0,93,255,0.55)");
-    grad.addColorStop(0.5, "rgba(10,47,135,0.25)");
-    grad.addColorStop(1, "rgba(14,26,61,0)");
+    grad.addColorStop(0, "rgba(0,93,255,0.14)");
+    grad.addColorStop(0.5, "rgba(0,93,255,0.06)");
+    grad.addColorStop(1, "rgba(0,93,255,0)");
     g.fillStyle = grad;
     g.fillRect(0, 0, 256, 256);
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     const plane = new THREE.Mesh(
       new THREE.PlaneGeometry(26, 18),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }),
     );
     plane.rotation.x = -Math.PI / 2;
     plane.position.y = -0.02;
     this.scene.add(plane);
-  }
-
-  private setupPost() {
-    this.composer?.dispose();
-    this.composer = null;
-    this.bloom = null;
-    if (this.mobile) return; // phones render straight to screen; bloom is the first thing we cut
-    this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(this.width, this.height), 0.85, 0.55, 1.0);
-    this.composer.addPass(this.bloom);
-    this.composer.addPass(new OutputPass());
-    this.composer.setPixelRatio(this.dpr);
-    this.composer.setSize(this.width, this.height);
   }
 
   private resize(force = false) {
@@ -331,8 +323,6 @@ export class MapEngine {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.composer?.setPixelRatio(this.dpr);
-    this.composer?.setSize(w, h);
     this.measureAnchors();
   }
 
@@ -355,6 +345,26 @@ export class MapEngine {
   private onPick = (e: CustomEvent<string>) => {
     this.pick = this.data.nodes.findIndex((n) => n.code === e.detail);
   };
+
+  /** A ripple starts where a screen point (e.g. the hero's quote button) meets the map's floor. */
+  private onRipple = (e: CustomEvent<{ x: number; y: number }>) => {
+    this.camera.updateMatrixWorld();
+    this.ray.setFromCamera(new THREE.Vector2((e.detail.x / this.width) * 2 - 1, 1 - (e.detail.y / this.height) * 2), this.camera);
+    if (!this.ray.ray.intersectPlane(this.ground, this.v3)) return;
+    this.ripples.push({ x: this.v3.x, z: this.v3.z, t: this.clock.elapsedTime });
+    if (this.ripples.length > 4) this.ripples.shift();
+  };
+
+  /** Height of the ripples passing over a point: rings that travel outward and fade. */
+  private rippleAt(x: number, z: number, time: number) {
+    let a = 0;
+    for (const r of this.ripples) {
+      const age = time - r.t;
+      const d = Math.hypot(x - r.x, z - r.z) - age * 5.5;
+      a += Math.exp(-(d * d) / 0.3) * (1 - age / RIPPLE_LIFE);
+    }
+    return Math.min(1.4, a);
+  }
 
   private statePt(i: number): Pt {
     return { x: this.states[i].x, z: this.states[i].z };
@@ -409,8 +419,7 @@ export class MapEngine {
     const dt = Math.min(0.05, this.clock.getDelta());
     const time = this.clock.elapsedTime;
     this.update(dt, time);
-    if (this.composer) this.composer.render(dt);
-    else this.renderer.render(this.scene, this.camera);
+    this.renderer.render(this.scene, this.camera);
     this.watchFps(dt);
   };
 
@@ -450,26 +459,36 @@ export class MapEngine {
     );
     this.camera.lookAt(c.tx, ty, c.tz);
     this.camera.setViewOffset(this.width, this.height, -c.ox * this.width, c.oy * this.height, this.width, this.height);
-    this.renderer.toneMappingExposure = 1.05 - c.dim * 0.78;
+    // Fades in on load, then fades toward the white page behind text-heavy sections.
+    this.canvas.style.opacity = String(Math.min(1, time * 1.2) * (1 - c.dim * 0.88));
+    // Fog follows the camera, so a far camera (phones) doesn't wash the whole map out to white.
+    const fog = this.scene.fog as THREE.Fog;
+    fog.near = dist - 2;
+    fog.far = dist + 24;
     this.scene.environmentRotation.set(this.pointer.y * 0.2, -this.pointer.x * 0.8 + time * 0.03, 0);
 
     // Intro: the map builds itself from west to east, then the links draw.
     this.intro = Math.min(1, time / 2.6); // wall-clock, so slow frames don't stretch the intro
     const introBuilding = this.intro < 1;
 
-    if (introBuilding || this.base.userData.dirty !== false) {
+    this.ripples = this.ripples.filter((r) => time - r.t < RIPPLE_LIFE);
+    const rippling = this.ripples.length > 0;
+    if (introBuilding || rippling || this.base.userData.dirty !== false) {
       const n = this.base.count;
       for (let i = 0; i < n; i++) {
         const x = this.baseX[i * 2];
         const z = this.baseX[i * 2 + 1];
         const g = ease(clamp01(this.intro * 1.7 - (x + 6) / 12 * 0.7));
+        const r = rippling ? this.rippleAt(x, z, time) : 0;
         this.tmp.position.set(x, 0, z);
-        this.tmp.scale.set(1, Math.max(0.0001, 0.05 * g), 1);
+        this.tmp.scale.set(1, Math.max(0.0001, (0.05 + r * 0.32) * g), 1);
         this.tmp.updateMatrix();
         this.base.setMatrixAt(i, this.tmp.matrix);
+        this.base.setColorAt(i, this.col.copy(BASE).lerp(CREST, Math.min(1, r)));
       }
       this.base.instanceMatrix.needsUpdate = true;
-      this.base.userData.dirty = introBuilding;
+      if (this.base.instanceColor) this.base.instanceColor.needsUpdate = true;
+      this.base.userData.dirty = introBuilding || rippling;
     }
 
     // Scroll-to-connect: the first state is on from the start, each scroll step draws the next link
@@ -503,13 +522,11 @@ export class MapEngine {
     }
 
     const wave = this.energy;
-    // Unlit elements (caps, links, nodes) ignore exposure, so they get dimmed by hand.
-    // Without bloom (phones) the caps need more of their own brightness to read as lit.
-    const lightLevel = (1 - c.dim * 0.85) * (this.composer ? 1 : 1.45);
     for (let k2 = 0; k2 < this.activeData.length; k2++) {
       const p = this.activeData[k2];
       const grow = ease(clamp01(this.intro * 1.6 - p.xn * 0.6 - 0.15));
-      const h = (0.16 + Math.sin(time * 5 - p.xn * 9) * 0.04 * wave) * grow + 0.0001;
+      const rip = rippling ? this.rippleAt(p.x, p.z, time) * 0.2 : 0;
+      const h = (0.16 + Math.sin(time * 5 - p.xn * 9) * 0.04 * wave + rip) * grow + 0.0001;
       const y = lifts[p.state] * grow;
       this.tmp.position.set(p.x, y, p.z);
       this.tmp.scale.set(1, h, 1);
@@ -521,14 +538,17 @@ export class MapEngine {
       this.caps.setMatrixAt(k2, this.tmp.matrix);
       const gl = this.glow[p.state];
       const f = this.focus[p.state];
+      this.active.setColorAt(k2, this.col.copy(STATE_OFF).lerp(ROYAL, Math.max(gl, f)));
       this.col
-        .copy(ROYAL)
-        .lerp(ICE, gl * 0.7 + f * 0.3)
-        .multiplyScalar((0.85 + gl * 1.15 + f * 0.6 + Math.sin(time * 2 + p.xn * 6) * 0.06) * lerp(lightLevel, Math.max(lightLevel, 1.1), f));
+        .copy(CAP_OFF)
+        .lerp(CAP_ON, gl)
+        .lerp(CAP_FOCUS, f * 0.8)
+        .multiplyScalar(1 + Math.sin(time * 2 + p.xn * 6) * 0.04 * gl);
       this.caps.setColorAt(k2, this.col);
     }
     this.active.instanceMatrix.needsUpdate = true;
     this.caps.instanceMatrix.needsUpdate = true;
+    if (this.active.instanceColor) this.active.instanceColor.needsUpdate = true;
     if (this.caps.instanceColor) this.caps.instanceColor.needsUpdate = true;
 
     // Links ride above the map, pins drop from each node to its state.
@@ -543,9 +563,7 @@ export class MapEngine {
       pos.setXYZ(i * 2 + 1, st.x, lifts[i] + 0.17, st.z);
     });
     pos.needsUpdate = true;
-    (this.pins.material as THREE.LineBasicMaterial).opacity = 0.55 * draw * lightLevel;
-    this.linkMat.opacity = 0.95 * lightLevel;
-    this.nodeMat.color.setScalar(lightLevel);
+    (this.pins.material as THREE.LineBasicMaterial).opacity = 0.45 * draw;
 
     this.links.forEach((l, i) => {
       const local = clamp01(reach - 1 - i) * draw;
@@ -559,8 +577,6 @@ export class MapEngine {
         l.pulse.scale.setScalar(on);
       }
     });
-
-    if (this.bloom) this.bloom.strength = 0.55 + ease(this.energy) * 0.3;
 
     this.emitFly(span);
 
@@ -593,7 +609,7 @@ export class MapEngine {
     window.dispatchEvent(new CustomEvent("asfra:fly", { detail: { f, pts: this.fly } }));
   }
 
-  /** Adaptive quality: lower the resolution, then drop bloom, then give up and show the static map. */
+  /** Adaptive quality: lower the resolution, then give up and show the static map. */
   private watchFps(dt: number) {
     this.fpsFrames++;
     this.fpsTime += dt;
@@ -608,12 +624,6 @@ export class MapEngine {
       this.dpr = Math.max(1, this.dpr - 0.5);
       this.renderer.setPixelRatio(this.dpr);
       this.renderer.setSize(this.width, this.height, false);
-      this.composer?.setPixelRatio(this.dpr);
-      this.composer?.setSize(this.width, this.height);
-    } else if (this.composer) {
-      this.composer.dispose();
-      this.composer = null;
-      this.bloom = null;
     } else if (fps < 20) {
       this.onFail();
     }
@@ -625,6 +635,7 @@ export class MapEngine {
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("pointermove", this.onPointer);
     window.removeEventListener("asfra:pick", this.onPick as EventListener);
+    window.removeEventListener("asfra:ripple", this.onRipple as EventListener);
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
       m.geometry?.dispose();
@@ -633,7 +644,6 @@ export class MapEngine {
       else mat?.dispose();
     });
     this.scene.environment?.dispose();
-    this.composer?.dispose();
     this.renderer.dispose();
   }
 }

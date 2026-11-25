@@ -77,7 +77,7 @@ export function AgencyForm({ lang, t, onStateChange }: Props) {
   if (status === "success") {
     return (
       <div role="status" className="py-2">
-        <CheckCircle2 className="size-10 text-royal-400" aria-hidden />
+        <CheckCircle2 className="size-10 text-royal" aria-hidden />
         <p className="mt-4 font-display text-2xl font-bold leading-tight">{t.agencyForm.success}</p>
       </div>
     );
@@ -88,7 +88,7 @@ export function AgencyForm({ lang, t, onStateChange }: Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate className="relative">
       <Honeypot register={register("website")} />
-      <p className="mb-5 text-sm text-white/60 md:hidden" aria-live="polite">
+      <p className="mb-5 text-sm text-navy/60 md:hidden" aria-live="polite">
         {fmt(t.agencyForm.step, { n: step })}
       </p>
 
@@ -158,9 +158,9 @@ export function AgencyForm({ lang, t, onStateChange }: Props) {
       </div>
 
       {status === "error" ? (
-        <p role="alert" className="mt-3 text-sm text-[#ff9b9b]">
+        <p role="alert" className="mt-3 text-sm text-red-600">
           {t.agencyForm.error}{" "}
-          <a href={whatsappLink(t.quote.whatsappText)} target="_blank" rel="noopener noreferrer" className="font-semibold text-white underline">
+          <a href={whatsappLink(t.quote.whatsappText)} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy underline">
             WhatsApp
           </a>
         </p>

@@ -9,7 +9,7 @@ export default function NotFound() {
         <p className="eyebrow">404</p>
         <h1 className="mt-4 text-5xl sm:text-7xl">
           Página no encontrada
-          <span className="mt-2 block text-white/45">Page not found</span>
+          <span className="mt-2 block text-navy/45">Page not found</span>
         </h1>
         <div className="mt-10 flex flex-wrap gap-3">
           <Link href="/" className={btn.primary}>

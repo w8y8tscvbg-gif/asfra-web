@@ -81,7 +81,7 @@ export function PinnedServices({ items, eyebrow, progress }: { items: Item[]; ey
       {/* Animated, pinned stage */}
       <div className="flex h-[100svh] flex-col justify-center gap-3 py-24 motion-reduce:hidden sm:gap-4">
         <div className={`${container} flex h-full max-h-[760px] flex-col gap-3 sm:gap-4`}>
-          <div className="crosshair relative flex flex-[1.35] flex-col items-center justify-between overflow-hidden rounded-[28px] bg-royal px-6 py-8 text-center sm:py-10">
+          <div className="crosshair relative flex flex-[1.35] flex-col items-center justify-between overflow-hidden rounded-[28px] bg-royal px-6 py-8 text-center text-white sm:py-10">
             <span className="ch tl" />
             <span className="ch tr" />
             <span className="ch bl" />
@@ -110,13 +110,13 @@ export function PinnedServices({ items, eyebrow, progress }: { items: Item[]; ey
             </div>
           </div>
 
-          <div data-fly-target className="relative grid flex-1 place-items-center overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#101d48,#0b1535)]">
+          <div data-fly-target className="relative grid flex-1 place-items-center overflow-hidden rounded-[28px] border border-navy/10 bg-[linear-gradient(180deg,#f4f7ff,#e9f0ff)]">
             {items.map((it) => {
               const Icon = SERVICE_ICONS[it.slug];
               return (
-                <div key={it.slug} className="p-icon col-start-1 row-start-1 flex flex-col items-center gap-3 text-royal-400">
+                <div key={it.slug} className="p-icon col-start-1 row-start-1 flex flex-col items-center gap-3 text-royal">
                   <Icon className="size-20 sm:size-28" strokeWidth={1.1} aria-hidden />
-                  <span className="font-display text-sm font-medium uppercase tracking-[0.16em] text-white/70">{it.name}</span>
+                  <span className="font-display text-sm font-medium uppercase tracking-[0.16em] text-navy/60">{it.name}</span>
                 </div>
               );
             })}
@@ -131,7 +131,7 @@ export function PinnedServices({ items, eyebrow, progress }: { items: Item[]; ey
           {items.map((it) => {
             const Icon = SERVICE_ICONS[it.slug];
             return (
-              <li key={it.slug} className="flex items-center gap-4 rounded-2xl bg-royal px-5 py-5 font-display text-xl font-bold">
+              <li key={it.slug} className="flex items-center gap-4 rounded-2xl bg-royal px-5 py-5 text-white font-display text-xl font-bold">
                 <Icon className="size-7 shrink-0" aria-hidden />
                 {it.pinned}
               </li>

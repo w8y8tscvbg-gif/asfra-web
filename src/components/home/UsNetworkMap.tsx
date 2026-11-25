@@ -74,18 +74,18 @@ export function UsNetworkMap({ data, label, play = "scroll", showLabels = false,
       <defs>
         <linearGradient id={`lg-${gid}`} x1="0" x2="1" y1="0" y2="0">
           <stop offset="0" stopColor="#4d8dff" stopOpacity="0.35" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity="0.95" />
+          <stop offset="1" stopColor="#005dff" stopOpacity="0.95" />
         </linearGradient>
       </defs>
 
-      <path className="m-base" d={data.base} stroke="rgba(255,255,255,.16)" strokeWidth={data.dot} strokeLinecap="round" fill="none" />
+      <path className="m-base" d={data.base} stroke="rgba(14,26,61,.13)" strokeWidth={data.dot} strokeLinecap="round" fill="none" />
 
       {data.active.map((s) => (
         <path
           key={s.code}
           className="m-state transition-[stroke,opacity] duration-300"
           d={s.d}
-          stroke={highlight && highlight !== s.code ? "#2f58b8" : "#005dff"}
+          stroke={highlight && highlight !== s.code ? "#9db5e8" : "#005dff"}
           strokeOpacity={highlight === s.code ? 1 : undefined}
           strokeWidth={highlight === s.code ? data.dot + 1.4 : data.dot}
           strokeLinecap="round"
@@ -100,17 +100,17 @@ export function UsNetworkMap({ data, label, play = "scroll", showLabels = false,
       {data.nodes.map((n) => (
         <g key={n.code}>
           <circle className="m-ring" cx={n.x} cy={n.y} r={7} fill="none" stroke="#4d8dff" strokeWidth={1.5} />
-          <circle className="m-node" cx={n.x} cy={n.y} r={highlight === n.code ? 7 : 4.5} fill="#fff" />
+          <circle className="m-node" cx={n.x} cy={n.y} r={highlight === n.code ? 7 : 4.5} fill="#005dff" />
           {showLabels && (
             <text
               className="m-label"
               x={n.x}
               y={n.y - 13}
               textAnchor="middle"
-              fill="#fff"
+              fill="#0e1a3d"
               fontSize={15}
               fontWeight={700}
-              style={{ fontFamily: "var(--font-display)", paintOrder: "stroke", stroke: "#0e1a3d", strokeWidth: 4 }}
+              style={{ fontFamily: "var(--font-display)", paintOrder: "stroke", stroke: "#ffffff", strokeWidth: 4 }}
             >
               {n.code}
             </text>

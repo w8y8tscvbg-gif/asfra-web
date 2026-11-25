@@ -71,7 +71,7 @@ export function QuoteForm({ lang, t, serviceNames, defaultService, idPrefix = "q
     });
     return (
       <div role="status" className="py-2">
-        <CheckCircle2 className="size-10 text-royal-400" aria-hidden />
+        <CheckCircle2 className="size-10 text-royal" aria-hidden />
         <p className="mt-4 font-display text-2xl font-bold leading-tight">{t.quote.success}</p>
         <a href={whatsappLink(text)} target="_blank" rel="noopener noreferrer" className={`${btn.ghost} mt-6`}>
           <WhatsAppIcon className="size-5 text-whatsapp" />
@@ -129,16 +129,16 @@ export function QuoteForm({ lang, t, serviceNames, defaultService, idPrefix = "q
           {status === "sending" ? t.quote.sending : t.quote.submit}
         </button>
         {status === "error" ? (
-          <p role="alert" className="mt-3 text-sm text-[#ff9b9b]">
+          <p role="alert" className="mt-3 text-sm text-red-600">
             {t.quote.error}{" "}
-            <a href={whatsappLink(t.quote.whatsappText)} target="_blank" rel="noopener noreferrer" className="font-semibold text-white underline">
+            <a href={whatsappLink(t.quote.whatsappText)} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy underline">
               WhatsApp
             </a>
           </p>
         ) : null}
-        <p className="mt-4 text-sm text-white/60">
+        <p className="mt-4 text-sm text-navy/60">
           {t.quote.preferWhatsapp}{" "}
-          <a href={whatsappLink(t.quote.whatsappText)} target="_blank" rel="noopener noreferrer" className="font-semibold text-white underline decoration-whatsapp underline-offset-4">
+          <a href={whatsappLink(t.quote.whatsappText)} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy underline decoration-whatsapp underline-offset-4">
             {t.quote.whatsappCta}
           </a>
         </p>

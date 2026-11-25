@@ -42,11 +42,11 @@ export default async function AgenciesPage({ params }: PageProps<"/[lang]/agenci
             {t.agenciesPage.title}
           </RevealText>
           <Reveal onMount delay={0.7} className="mt-7">
-            <p className="max-w-xl text-xl text-white/80">{t.agenciesPage.lead}</p>
+            <p className="max-w-xl text-xl text-navy/80">{t.agenciesPage.lead}</p>
             <ul className="mt-6 flex flex-wrap gap-2">
               {t.audiences.agencies.items.map((i) => (
-                <li key={i} className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-4 py-2 text-sm">
-                  <Check className="size-4 text-royal-400" strokeWidth={3} aria-hidden />
+                <li key={i} className="inline-flex items-center gap-2 rounded-full bg-navy/[0.06] px-4 py-2 text-sm">
+                  <Check className="size-4 text-royal" strokeWidth={3} aria-hidden />
                   {i}
                 </li>
               ))}
@@ -71,7 +71,7 @@ export default async function AgenciesPage({ params }: PageProps<"/[lang]/agenci
             className="-mx-5 mt-10 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0"
           >
             {t.agenciesPage.steps.map((s, i) => (
-              <li key={s.title} className="w-[78%] shrink-0 snap-start rounded-[22px] bg-white p-6 text-navy sm:w-auto">
+              <li key={s.title} className="w-[78%] shrink-0 snap-start rounded-[22px] border border-navy/10 bg-royal/[0.05] p-6 sm:w-auto">
                 <span className="font-display text-sm font-medium text-royal">0{i + 1}</span>
                 <h3 className="mt-8 text-2xl leading-tight">{s.title}</h3>
                 <p className="mt-2 text-[15px] text-navy/70">{s.text}</p>
