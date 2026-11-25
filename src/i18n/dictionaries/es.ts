@@ -35,8 +35,8 @@ const es = {
     ctaPrimary: "Cotizar ahora",
     ctaSecondary: "Soy agencia de seguros",
     mapLabel: "Mapa de EE. UU. con los 13 estados donde trabaja ASFRA",
-    hold: "Mantén presionado para conectar",
-    holdDone: "13 estados conectados",
+    connect: "Desliza para conectar",
+    connected: "13 estados conectados",
   },
   pinned: {
     eyebrow: "ASFRA · Todo en un solo lugar",

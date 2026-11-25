@@ -204,7 +204,43 @@ html.has-3d .hero-scrim {
 @media (min-width: 1024px) {
   html.has-3d .hero-scrim {
     background: linear-gradient(90deg, rgba(14, 26, 61, 0.92) 0%, rgba(14, 26, 61, 0.7) 36%, rgba(14, 26, 61, 0) 60%);
+    /* no hard edge when the pinned hero scrolls away */
+    -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
+    mask-image: linear-gradient(180deg, #000 70%, transparent);
   }
+}
+/* Extra scroll length for the hero while the 3D map connects the states */
+html.has-3d .hero-track {
+  padding-bottom: 38svh;
+}
+@media (min-width: 1024px) {
+  html.has-3d .hero-track {
+    height: 190svh;
+    padding-bottom: 0;
+  }
+  html.has-3d .hero-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    min-height: 0;
+  }
+}
+@keyframes scroll-cue {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+  70% {
+    transform: translate(-50%, 6px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, 0);
+    opacity: 0;
+  }
+}
+.scroll-cue > span {
+  animation: scroll-cue 1.6s var(--ease-brand) infinite;
 }
 .needs-3d {
   display: none !important;

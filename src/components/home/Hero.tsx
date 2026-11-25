@@ -7,63 +7,68 @@ import { btn, container } from "@/components/ui/styles";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/es";
 import { getUsMap } from "@/lib/usMap";
-import { HoldToConnect } from "@/components/scene/HoldToConnect";
+import { ScrollConnect } from "@/components/scene/ScrollConnect";
 import { UsNetworkMap } from "./UsNetworkMap";
 
+/**
+ * With the live 3D map running (html.has-3d) the hero gets extra scroll length: on desktop the stage
+ * stays pinned (sticky) while the scroll connects the 13 states; on phones the text scrolls away and
+ * the map takes the screen. Without 3D the hero is a normal one-screen section.
+ */
 export function Hero({ lang, t }: { lang: Locale; t: Dictionary }) {
   const map = getUsMap();
   return (
-    <section data-cue="hero" className="relative isolate overflow-hidden pb-16 pt-36 sm:pt-44 lg:min-h-[100svh] lg:pb-24">
-      <div
-        aria-hidden
-        className="hero-glow absolute inset-0 -z-10 transition-opacity duration-1000 bg-[radial-gradient(90%_60%_at_80%_10%,#0a2f87_0%,rgba(14,26,61,0)_60%),radial-gradient(60%_50%_at_10%_90%,rgba(0,93,255,.18)_0%,rgba(14,26,61,0)_70%)]"
-      />
-      <div aria-hidden className="hero-scrim pointer-events-none absolute inset-0 -z-10" />
-      <div className={`${container} grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-6`}>
-        <div className="relative z-10">
-          <Reveal onMount delay={0.2} y={12}>
-            <p className="eyebrow">{t.hero.eyebrow}</p>
-          </Reveal>
-          <RevealText
-            as="h1"
-            onMount
-            delay={0.35}
-            className="mt-5 text-[2.9rem] leading-[0.95] tracking-[-0.045em] sm:text-7xl lg:text-[5.6rem] xl:text-[6.4rem]"
-          >
-            {t.hero.title}
-          </RevealText>
-          <Reveal onMount delay={1} stagger={0.12} className="mt-6">
-            <p className="max-w-md text-lg leading-relaxed text-white/75 sm:text-xl">{t.hero.subtitle}</p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Magnetic>
-                <Link href="#cotizar" className={`${btn.primary} w-full sm:w-auto`}>
-                  {t.hero.ctaPrimary}
-                  <ArrowUpRight className="size-4" aria-hidden />
-                </Link>
-              </Magnetic>
-              <Magnetic>
-                <Link href={localePath(lang, "/agencias")} className={`${btn.light} w-full sm:w-auto`}>
-                  {t.hero.ctaSecondary}
-                </Link>
-              </Magnetic>
-            </div>
-            <p className="mt-10 flex items-center gap-3 font-display text-sm font-medium text-royal-400">
-              <span className="h-px w-10 bg-royal" aria-hidden />
-              {t.brand.slogan}
-            </p>
-          </Reveal>
-        </div>
-
-        <div className="relative -mx-5 sm:mx-0 lg:-mr-16">
-          {/* Flat map: shown until the live 3D map takes over (or instead of it on devices without WebGL). */}
-          <div className="map-fallback">
-            <UsNetworkMap data={map} label={t.hero.mapLabel} play="mount" />
+    <section data-cue="hero" className="hero-track relative">
+      <div className="hero-stage relative isolate overflow-clip pb-16 pt-36 sm:pt-44 lg:flex lg:min-h-[100svh] lg:items-center lg:pb-24">
+        <div
+          aria-hidden
+          className="hero-glow absolute inset-0 -z-10 transition-opacity duration-1000 bg-[radial-gradient(90%_60%_at_80%_10%,#0a2f87_0%,rgba(14,26,61,0)_60%),radial-gradient(60%_50%_at_10%_90%,rgba(0,93,255,.18)_0%,rgba(14,26,61,0)_70%)]"
+        />
+        <div aria-hidden className="hero-scrim pointer-events-none absolute inset-0 -z-10" />
+        <div className={`${container} grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-6`}>
+          <div className="relative z-10">
+            <Reveal onMount delay={0.2} y={12}>
+              <p className="eyebrow">{t.hero.eyebrow}</p>
+            </Reveal>
+            <RevealText
+              as="h1"
+              onMount
+              delay={0.35}
+              className="mt-5 text-[2.9rem] leading-[0.95] tracking-[-0.045em] sm:text-7xl lg:text-[5.6rem] xl:text-[6.4rem]"
+            >
+              {t.hero.title}
+            </RevealText>
+            <Reveal onMount delay={1} stagger={0.12} className="mt-6">
+              <p className="max-w-md text-lg leading-relaxed text-white/75 sm:text-xl">{t.hero.subtitle}</p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Magnetic>
+                  <Link href="#cotizar" className={`${btn.primary} w-full sm:w-auto`}>
+                    {t.hero.ctaPrimary}
+                    <ArrowUpRight className="size-4" aria-hidden />
+                  </Link>
+                </Magnetic>
+                <Magnetic>
+                  <Link href={localePath(lang, "/agencias")} className={`${btn.light} w-full sm:w-auto`}>
+                    {t.hero.ctaSecondary}
+                  </Link>
+                </Magnetic>
+              </div>
+              <p className="mt-10 flex items-center gap-3 font-display text-sm font-medium text-royal-400">
+                <span className="h-px w-10 bg-royal" aria-hidden />
+                {t.brand.slogan}
+              </p>
+            </Reveal>
           </div>
-          <div className="mt-2 flex justify-center lg:absolute lg:-bottom-6 lg:left-1/2 lg:mt-0 lg:-translate-x-1/2">
-            <HoldToConnect label={t.hero.hold} done={t.hero.holdDone} />
+
+          <div className="relative -mx-5 sm:mx-0 lg:-mr-16">
+            {/* Flat map: shown until the live 3D map takes over (or instead of it on devices without WebGL). */}
+            <div className="map-fallback">
+              <UsNetworkMap data={map} label={t.hero.mapLabel} play="mount" />
+            </div>
           </div>
         </div>
       </div>
+      <ScrollConnect label={t.hero.connect} done={t.hero.connected} />
     </section>
   );
 }

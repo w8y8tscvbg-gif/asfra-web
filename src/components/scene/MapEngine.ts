@@ -8,7 +8,8 @@ import type { Map3DData } from "@/lib/usMap";
 /**
  * Live 3D map of the U.S. built entirely from code: every grid point is a small metal pillar,
  * the 13 states ASFRA serves are raised in royal blue with glowing caps and joined by arcs of light.
- * A cue list pinned to page sections ([data-cue]) drives the camera from the scroll.
+ * A cue list pinned to page sections ([data-cue]) drives the camera from the scroll, and scrolling
+ * through the hero connects the states one by one (no clicks needed).
  */
 
 export type Cue = {
@@ -23,13 +24,21 @@ export type Cue = {
   dim: number; // 0 full, 1 nearly dark (so text on top stays readable)
 };
 
-type CueSet = Record<string, (mobile: boolean) => Cue>;
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const smooth = (t: number) => t * t * (3 - 2 * t);
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+type CueSet = Record<string, (mobile: boolean, p: number) => Cue>; // p: progress through the hero
 
 const CUES: CueSet = {
-  hero: (m) =>
-    m
-      ? { polar: 44, azimuth: -8, distance: 34, tx: -0.1, tz: 0.3, ox: 0, oy: -0.14, explode: 0, dim: 0 }
-      : { polar: 52, azimuth: -20, distance: 21, tx: 0.4, tz: 0.2, ox: 0.2, oy: 0.02, explode: 0, dim: 0 },
+  // While the hero scrolls, the camera orbits and pushes in as the states connect.
+  hero: (m, p) => {
+    const e = smooth(p);
+    return m
+      ? { polar: lerp(44, 38, e), azimuth: lerp(-8, 12, e), distance: lerp(34, 30, e), tx: -0.1, tz: 0.3, ox: 0, oy: lerp(-0.14, 0.03, e), explode: 0, dim: 0 }
+      : { polar: lerp(52, 42, e), azimuth: lerp(-20, 8, e), distance: lerp(21, 18, e), tx: 0.4, tz: 0.2, ox: 0.2, oy: 0.02, explode: 0, dim: 0 };
+  },
   pinned: (m) =>
     m
       ? { polar: 40, azimuth: 16, distance: 22, tx: 2.4, tz: 1.1, ox: 0, oy: 0.08, explode: 0.55, dim: 0.35 }
@@ -48,10 +57,6 @@ const NAVY = new THREE.Color("#0e1a3d");
 const ROYAL = new THREE.Color("#005dff");
 const ICE = new THREE.Color("#9cc0ff");
 
-const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-const smooth = (t: number) => t * t * (3 - 2 * t);
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 type StateGroup = { index: number; instances: number[]; order: number; x: number; z: number };
 
@@ -92,18 +97,14 @@ export class MapEngine {
   private pointer = { x: 0, y: 0, tx: 0, ty: 0 };
 
   private intro = 0;
-  private energy = 0;
-  private held = false;
+  private energy = 0; // eased copy of the hero scroll progress
   private glow: number[] = [];
   private lit = 0;
-  private lastEmit = -1;
+  private lastEmit = "";
 
   private fpsFrames = 0;
   private fpsTime = 0;
   private fpsChecks = 0;
-
-  private audio: AudioContext | null = null;
-  private noise: AudioBuffer | null = null;
 
   private tmp = new THREE.Object3D();
   private col = new THREE.Color();
@@ -127,7 +128,7 @@ export class MapEngine {
     this.baseX = new Float32Array(0);
     this.buildMap();
     this.buildFloorGlow();
-    this.cur = CUES.hero(this.mobile);
+    this.cur = CUES.hero(this.mobile, 0);
 
     this.resize(true);
     this.setupPost();
@@ -135,7 +136,6 @@ export class MapEngine {
 
     window.addEventListener("resize", this.onResize);
     window.addEventListener("pointermove", this.onPointer, { passive: true });
-    window.addEventListener("asfra:hold", this.onHold as EventListener);
     this.renderer.compileAsync(this.scene, this.camera).catch(() => {});
     this.clock.start();
     this.loop();
@@ -331,57 +331,24 @@ export class MapEngine {
     this.pointer.ty = (e.clientY / window.innerHeight) * 2 - 1;
   };
 
-  private onHold = (e: CustomEvent<boolean>) => {
-    this.held = e.detail;
-    if (this.held) this.ensureAudio();
-  };
-
-  private ensureAudio() {
-    try {
-      if (!this.audio) {
-        const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        this.audio = new Ctx();
-        const len = Math.floor(this.audio.sampleRate * 0.06);
-        this.noise = this.audio.createBuffer(1, len, this.audio.sampleRate);
-        const d = this.noise.getChannelData(0);
-        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
-      }
-      void this.audio.resume();
-    } catch {
-      this.audio = null;
-    }
-  }
-
-  /** A short filtered noise burst: a click synthesized in the browser, no audio files. */
-  private tick(step: number) {
-    if (!this.audio || !this.noise) return;
-    const ac = this.audio;
-    const t = ac.currentTime;
-    const src = ac.createBufferSource();
-    src.buffer = this.noise;
-    const f = ac.createBiquadFilter();
-    f.type = "bandpass";
-    f.frequency.value = 900 + step * 170;
-    f.Q.value = 9;
-    const g = ac.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.35, t + 0.004);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
-    src.connect(f).connect(g).connect(ac.destination);
-    src.start(t);
-    src.stop(t + 0.1);
-  }
-
-  private targetCue(): Cue {
+  /** Scroll distance over which the hero connects the states: done just before the hero stops being pinned. */
+  private heroSpan() {
     const a = this.anchors;
-    if (!a.length) return CUES.hero(this.mobile);
+    const vh = window.innerHeight;
+    if (a.length < 2 || a[0].id !== "hero") return vh * 0.6;
+    return Math.max(vh * 0.35, (a[1].top - a[0].top - vh) * 0.9);
+  }
+
+  private targetCue(p: number): Cue {
+    const a = this.anchors;
+    if (!a.length) return CUES.hero(this.mobile, p);
     // A section takes over the camera as it reaches the upper part of the screen.
     const probe = window.scrollY + window.innerHeight * 0.22;
     let i = 0;
     while (i < a.length - 1 && probe >= a[i + 1].top) i++;
-    const from = CUES[a[i].id](this.mobile);
+    const from = CUES[a[i].id](this.mobile, p);
     if (i === a.length - 1 || probe < a[0].top) return from;
-    const to = CUES[a[i + 1].id](this.mobile);
+    const to = CUES[a[i + 1].id](this.mobile, p);
     const raw = (probe - a[i].top) / Math.max(1, a[i + 1].top - a[i].top);
     const t = smooth(clamp01((raw - 0.6) / 0.4)); // hold each cue, blend in the last stretch
     const out = { ...from };
@@ -401,8 +368,13 @@ export class MapEngine {
   };
 
   private update(dt: number, time: number) {
+    // Hero scroll progress: drives the connection and the hero camera move.
+    const span = this.heroSpan();
+    const p = clamp01(window.scrollY / span);
+    this.energy = lerp(this.energy, p, 1 - Math.exp(-dt * 6));
+
     // Camera eases toward the scroll cue.
-    const target = this.targetCue();
+    const target = this.targetCue(p);
     const k = 1 - Math.exp(-dt * 3.2);
     (Object.keys(this.cur) as (keyof Cue)[]).forEach((key) => (this.cur[key] = lerp(this.cur[key], target[key], k)));
     const c = this.cur;
@@ -410,10 +382,9 @@ export class MapEngine {
     this.pointer.x = lerp(this.pointer.x, this.pointer.tx, 1 - Math.exp(-dt * 2.5));
     this.pointer.y = lerp(this.pointer.y, this.pointer.ty, 1 - Math.exp(-dt * 2.5));
 
-    const holdPush = ease(this.energy) * 0.08;
     const polar = THREE.MathUtils.degToRad(c.polar + this.pointer.y * 2.5);
     const az = THREE.MathUtils.degToRad(c.azimuth + this.pointer.x * 5 + Math.sin(time * 0.12) * 2);
-    const dist = c.distance * (1 - holdPush);
+    const dist = c.distance;
     this.camera.position.set(
       c.tx + dist * Math.sin(polar) * Math.sin(az),
       dist * Math.cos(polar),
@@ -443,12 +414,11 @@ export class MapEngine {
       this.base.userData.dirty = introBuilding;
     }
 
-    // Hold-to-connect: energy charges while held and lights the states one after another.
-    this.energy = clamp01(this.energy + (this.held ? dt / 1.4 : -dt / 2.2));
+    // Scroll-to-connect: the first state is on from the start, each scroll step draws the next link
+    // and lights the state at its end, west to east, until all of them are connected.
     const steps = this.states.length;
-    const litNow = Math.min(steps, Math.floor(this.energy * (steps + 0.999)));
-    if (litNow > this.lit && this.held) for (let s = this.lit; s < litNow; s++) this.tick(s);
-    this.lit = litNow;
+    const reach = 1 + clamp01(this.energy * 1.08) * (steps - 1); // continuous count of connected states
+    this.lit = Math.min(steps, Math.floor(reach + 1e-4));
 
     // Exploded view: each state lifts with a delay by its order, the first to leave returns last.
     const lifts: number[] = [];
@@ -505,23 +475,26 @@ export class MapEngine {
     this.nodeMat.color.setScalar(lightLevel);
 
     this.links.forEach((l, i) => {
-      const local = clamp01(draw * this.links.length - i * 0.6);
+      const local = clamp01(reach - 1 - i) * draw;
       const idx = l.mesh.geometry.index!.count;
       l.mesh.geometry.setDrawRange(0, Math.floor((local * idx) / 36) * 36);
-      const e = ease(this.energy);
-      l.pulse.visible = e > 0.02;
+      // Once a link is drawn, a spark keeps travelling along it.
+      const on = clamp01((local - 0.85) / 0.15);
+      l.pulse.visible = on > 0.02;
       if (l.pulse.visible) {
         l.pulse.position.copy(l.curve.getPointAt((time * 0.55 + i * 0.13) % 1));
-        l.pulse.scale.setScalar(e);
+        l.pulse.scale.setScalar(on);
       }
     });
 
     if (this.bloom) this.bloom.strength = 0.55 + ease(this.energy) * 0.3;
 
-    const rounded = Math.round(this.energy * 100) / 100;
-    if (rounded !== this.lastEmit) {
-      this.lastEmit = rounded;
-      window.dispatchEvent(new CustomEvent("asfra:energy", { detail: { e: this.energy, lit: this.lit, total: steps } }));
+    // The on-screen counter follows along; it hides once the page has moved past the hero.
+    const show = this.intro > 0.6 && window.scrollY < span + window.innerHeight * 0.25;
+    const key = `${Math.round(this.energy * 100)}|${this.lit}|${show}`;
+    if (key !== this.lastEmit) {
+      this.lastEmit = key;
+      window.dispatchEvent(new CustomEvent("asfra:energy", { detail: { e: this.energy, lit: this.lit, total: steps, show } }));
     }
   }
 
@@ -556,7 +529,6 @@ export class MapEngine {
     cancelAnimationFrame(this.raf);
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("pointermove", this.onPointer);
-    window.removeEventListener("asfra:hold", this.onHold as EventListener);
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
       m.geometry?.dispose();
@@ -567,6 +539,5 @@ export class MapEngine {
     this.scene.environment?.dispose();
     this.composer?.dispose();
     this.renderer.dispose();
-    void this.audio?.close();
   }
 }
