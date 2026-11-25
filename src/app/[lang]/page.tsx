@@ -8,6 +8,8 @@ import { ServiceCards } from "@/components/home/ServiceCards";
 import { StatesSection } from "@/components/home/StatesSection";
 import { RevealText } from "@/components/motion/RevealText";
 import { MapScene } from "@/components/scene/MapScene";
+import { ScrollLine } from "@/components/scene/ScrollLine";
+import { ServiceFly } from "@/components/scene/ServiceFly";
 import { container } from "@/components/ui/styles";
 import { hasLocale, localePath } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
@@ -47,21 +49,26 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
     <>
       <MapScene data={map3d} />
       <Hero lang={lang} t={t} />
-      <PinnedServices items={items} eyebrow={t.pinned.eyebrow} progress={t.pinned.progress} />
+      <ServiceFly />
+      {/* One blue line runs down this wrapper, from the services to the quote form. */}
+      <div className="relative">
+        <ScrollLine />
+        <PinnedServices items={items} eyebrow={t.pinned.eyebrow} progress={t.pinned.progress} />
 
-      <section id="servicios" data-cue="services" className="scroll-mt-28 py-24 sm:py-32">
-        <div className={container}>
-          <p className="eyebrow">{t.services.eyebrow}</p>
-          <RevealText as="h2" className="mb-12 mt-4 max-w-3xl text-[2.6rem] leading-none sm:text-6xl">
-            {t.services.title}
-          </RevealText>
-          <ServiceCards cards={cards} viewLabel={t.services.viewService} />
-        </div>
-      </section>
+        <section id="servicios" data-cue="services" className="scroll-mt-28 py-24 sm:py-32">
+          <div className={container}>
+            <p className="eyebrow">{t.services.eyebrow}</p>
+            <RevealText as="h2" className="mb-12 mt-4 max-w-3xl text-[2.6rem] leading-none sm:text-6xl">
+              {t.services.title}
+            </RevealText>
+            <ServiceCards cards={cards} viewLabel={t.services.viewService} />
+          </div>
+        </section>
 
-      <Audiences lang={lang} t={t} />
-      <StatesSection t={t} />
-      <QuoteSection lang={lang} t={t} />
+        <Audiences lang={lang} t={t} />
+        <StatesSection t={t} />
+        <QuoteSection lang={lang} t={t} brand />
+      </div>
     </>
   );
 }

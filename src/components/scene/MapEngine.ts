@@ -9,7 +9,8 @@ import type { Map3DData } from "@/lib/usMap";
  * Live 3D map of the U.S. built entirely from code: every grid point is a small metal pillar,
  * the 13 states ASFRA serves are raised in royal blue with glowing caps and joined by arcs of light.
  * A cue list pinned to page sections ([data-cue]) drives the camera from the scroll, and scrolling
- * through the hero connects the states one by one (no clicks needed).
+ * through the hero connects the states one by one (no clicks needed). Further down, the camera tours
+ * the states one at a time, and a state picked in the quote form is brought into focus.
  */
 
 export type Cue = {
@@ -29,11 +30,14 @@ const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-type CueSet = Record<string, (mobile: boolean, p: number) => Cue>; // p: progress through the hero
+type Pt = { x: number; z: number };
+/** p: progress through the hero; tour: point the states tour is looking at; pick: state chosen in the quote form. */
+type Ctx = { p: number; tour: Pt; pick: Pt | null };
+type CueSet = Record<string, (mobile: boolean, c: Ctx) => Cue>;
 
 const CUES: CueSet = {
   // While the hero scrolls, the camera orbits and pushes in as the states connect.
-  hero: (m, p) => {
+  hero: (m, { p }) => {
     const e = smooth(p);
     return m
       ? { polar: lerp(44, 38, e), azimuth: lerp(-8, 12, e), distance: lerp(34, 30, e), tx: -0.1, tz: 0.3, ox: 0, oy: lerp(-0.14, 0.03, e), explode: 0, dim: 0 }
@@ -45,12 +49,22 @@ const CUES: CueSet = {
       : { polar: 38, azimuth: 18, distance: 9.5, tx: 2.4, tz: 1.1, ox: 0, oy: 0, explode: 0.55, dim: 0.35 },
   services: (m) => ({ polar: 14, azimuth: 0, distance: m ? 40 : 15, tx: 0, tz: 0, ox: 0, oy: 0, explode: 0.15, dim: 0.82 }),
   audiences: (m) => ({ polar: 32, azimuth: -28, distance: m ? 40 : 14, tx: 0, tz: 0, ox: 0, oy: 0, explode: 0, dim: 0.86 }),
-  states: (m) =>
+  // Close-up that travels from state to state while the section is pinned.
+  states: (m, { tour }) =>
     m
-      ? { polar: 44, azimuth: 0, distance: 38, tx: 0.2, tz: 0.4, ox: 0, oy: 0.1, explode: 1, dim: 0.05 }
-      : { polar: 46, azimuth: 0, distance: 17.5, tx: 0.3, tz: 0.4, ox: -0.17, oy: -0.04, explode: 1, dim: 0.05 },
-  quote: (m) => ({ polar: 30, azimuth: 20, distance: m ? 42 : 22, tx: 0, tz: 0, ox: 0, oy: 0, explode: 0, dim: 0.9 }),
+      ? { polar: 40, azimuth: 0, distance: 19, tx: tour.x, tz: tour.z, ox: 0, oy: -0.1, explode: 1, dim: 0.08 }
+      : { polar: 42, azimuth: -6, distance: 13, tx: tour.x, tz: tour.z, ox: -0.14, oy: -0.04, explode: 1, dim: 0.05 },
+  // Far and dark behind the form; once a state is picked, the camera goes to it.
+  quote: (m, { pick }) =>
+    pick
+      ? m
+        ? { polar: 36, azimuth: 10, distance: 22, tx: pick.x, tz: pick.z, ox: 0, oy: 0.3, explode: 0, dim: 0.62 }
+        : { polar: 36, azimuth: 12, distance: 16, tx: pick.x, tz: pick.z, ox: -0.1, oy: -0.14, explode: 0, dim: 0.62 }
+      : { polar: 30, azimuth: 20, distance: m ? 42 : 22, tx: 0, tz: 0, ox: 0, oy: 0, explode: 0, dim: 0.9 },
 };
+
+/** States whose positions the service icons fly out from (spread west to east). */
+const FLY_FROM = [0, 1, 4, 7, 10, 12];
 
 const S = 0.012; // world units per map pixel
 const NAVY = new THREE.Color("#0e1a3d");
@@ -92,7 +106,7 @@ export class MapEngine {
   private width = 0;
   private height = 0;
   private dpr = 1;
-  private anchors: { id: string; top: number }[] = [];
+  private anchors: { id: string; top: number; height: number }[] = [];
   private cur: Cue;
   private pointer = { x: 0, y: 0, tx: 0, ty: 0 };
 
@@ -101,6 +115,12 @@ export class MapEngine {
   private glow: number[] = [];
   private lit = 0;
   private lastEmit = "";
+  private focus: number[] = [];
+  private pick = -1;
+  private tourIdx = -1;
+  private flyOn = false;
+  private fly = new Float32Array(FLY_FROM.length * 2);
+  private v3 = new THREE.Vector3();
 
   private fpsFrames = 0;
   private fpsTime = 0;
@@ -128,7 +148,7 @@ export class MapEngine {
     this.baseX = new Float32Array(0);
     this.buildMap();
     this.buildFloorGlow();
-    this.cur = CUES.hero(this.mobile, 0);
+    this.cur = CUES.hero(this.mobile, { p: 0, tour: { x: 0, z: 0 }, pick: null });
 
     this.resize(true);
     this.setupPost();
@@ -136,6 +156,7 @@ export class MapEngine {
 
     window.addEventListener("resize", this.onResize);
     window.addEventListener("pointermove", this.onPointer, { passive: true });
+    window.addEventListener("asfra:pick", this.onPick as EventListener);
     this.renderer.compileAsync(this.scene, this.camera).catch(() => {});
     this.clock.start();
     this.loop();
@@ -206,6 +227,7 @@ export class MapEngine {
       z: (this.data.nodes[i].y - cy) * S,
     }));
     this.glow = new Array(stateCount).fill(0);
+    this.focus = new Array(stateCount).fill(0);
 
     const minX = -cx * S;
     const spanX = width * S;
@@ -320,10 +342,34 @@ export class MapEngine {
   measureAnchors = () => {
     const els = Array.from(document.querySelectorAll<HTMLElement>("[data-cue]"));
     this.anchors = els
-      .map((el) => ({ id: el.dataset.cue!, top: el.getBoundingClientRect().top + window.scrollY }))
+      .map((el) => {
+        // A GSAP-pinned section is measured through its spacer, which keeps its place in the page.
+        const box = el.parentElement?.classList.contains("pin-spacer") ? el.parentElement : el;
+        const r = box.getBoundingClientRect();
+        return { id: el.dataset.cue!, top: r.top + window.scrollY, height: r.height };
+      })
       .filter((a) => CUES[a.id])
       .sort((a, b) => a.top - b.top);
   };
+
+  private onPick = (e: CustomEvent<string>) => {
+    this.pick = this.data.nodes.findIndex((n) => n.code === e.detail);
+  };
+
+  private statePt(i: number): Pt {
+    return { x: this.states[i].x, z: this.states[i].z };
+  }
+
+  private anchor(id: string) {
+    return this.anchors.find((a) => a.id === id);
+  }
+
+  /** 0 -> 1 while the states section is pinned: the tour runs across it. */
+  private tourProgress() {
+    const a = this.anchor("states");
+    if (!a) return 0;
+    return clamp01((window.scrollY - a.top) / Math.max(1, a.height - window.innerHeight));
+  }
 
   private onPointer = (e: PointerEvent) => {
     if (e.pointerType !== "mouse") return;
@@ -339,18 +385,19 @@ export class MapEngine {
     return Math.max(vh * 0.35, (a[1].top - a[0].top - vh) * 0.9);
   }
 
-  private targetCue(p: number): Cue {
+  private targetCue(ctx: Ctx): Cue {
     const a = this.anchors;
-    if (!a.length) return CUES.hero(this.mobile, p);
+    if (!a.length) return CUES.hero(this.mobile, ctx);
     // A section takes over the camera as it reaches the upper part of the screen.
     const probe = window.scrollY + window.innerHeight * 0.22;
     let i = 0;
     while (i < a.length - 1 && probe >= a[i + 1].top) i++;
-    const from = CUES[a[i].id](this.mobile, p);
+    const from = CUES[a[i].id](this.mobile, ctx);
     if (i === a.length - 1 || probe < a[0].top) return from;
-    const to = CUES[a[i + 1].id](this.mobile, p);
-    const raw = (probe - a[i].top) / Math.max(1, a[i + 1].top - a[i].top);
-    const t = smooth(clamp01((raw - 0.6) / 0.4)); // hold each cue, blend in the last stretch
+    const to = CUES[a[i + 1].id](this.mobile, ctx);
+    // Hold each cue, blend in the last stretch before the next section (long pinned sections hold longer).
+    const blend = Math.min((a[i + 1].top - a[i].top) * 0.4, window.innerHeight * 0.9);
+    const t = smooth(clamp01((probe - (a[i + 1].top - blend)) / Math.max(1, blend)));
     const out = { ...from };
     (Object.keys(out) as (keyof Cue)[]).forEach((k) => (out[k] = lerp(from[k], to[k], t)));
     return out;
@@ -373,8 +420,18 @@ export class MapEngine {
     const p = clamp01(window.scrollY / span);
     this.energy = lerp(this.energy, p, 1 - Math.exp(-dt * 6));
 
+    // States tour: dwell on each state, travel between neighbours.
+    const n = this.states.length;
+    const q = this.tourProgress() * (n - 1);
+    const i0 = Math.min(n - 2, Math.floor(q));
+    const step = smooth(clamp01((q - i0 - 0.25) / 0.5));
+    const a0 = this.statePt(i0);
+    const a1 = this.statePt(i0 + 1);
+    const tour = { x: lerp(a0.x, a1.x, step), z: lerp(a0.z, a1.z, step) };
+    const ctx: Ctx = { p, tour, pick: this.pick >= 0 ? this.statePt(this.pick) : null };
+
     // Camera eases toward the scroll cue.
-    const target = this.targetCue(p);
+    const target = this.targetCue(ctx);
     const k = 1 - Math.exp(-dt * 3.2);
     (Object.keys(this.cur) as (keyof Cue)[]).forEach((key) => (this.cur[key] = lerp(this.cur[key], target[key], k)));
     const c = this.cur;
@@ -385,12 +442,13 @@ export class MapEngine {
     const polar = THREE.MathUtils.degToRad(c.polar + this.pointer.y * 2.5);
     const az = THREE.MathUtils.degToRad(c.azimuth + this.pointer.x * 5 + Math.sin(time * 0.12) * 2);
     const dist = c.distance;
+    const ty = c.explode * 1.1; // look at the lifted states, not the floor under them
     this.camera.position.set(
       c.tx + dist * Math.sin(polar) * Math.sin(az),
-      dist * Math.cos(polar),
+      ty + dist * Math.cos(polar),
       c.tz + dist * Math.sin(polar) * Math.cos(az),
     );
-    this.camera.lookAt(c.tx, 0, c.tz);
+    this.camera.lookAt(c.tx, ty, c.tz);
     this.camera.setViewOffset(this.width, this.height, -c.ox * this.width, c.oy * this.height, this.width, this.height);
     this.renderer.toneMappingExposure = 1.05 - c.dim * 0.78;
     this.scene.environmentRotation.set(this.pointer.y * 0.2, -this.pointer.x * 0.8 + time * 0.03, 0);
@@ -420,12 +478,26 @@ export class MapEngine {
     const reach = 1 + clamp01(this.energy * 1.08) * (steps - 1); // continuous count of connected states
     this.lit = Math.min(steps, Math.floor(reach + 1e-4));
 
+    // Which state is in focus: the one the tour is on, or the one picked in the form.
+    const vh = window.innerHeight;
+    const sa = this.anchor("states");
+    const qa = this.anchor("quote");
+    const inTour = !!sa && window.scrollY > sa.top - vh * 0.3 && window.scrollY < sa.top + sa.height - vh * 0.7;
+    const inQuote = !!qa && window.scrollY > qa.top - vh * 0.8;
+    const tourIdx = inTour ? Math.round(i0 + step) : -1;
+    const focusIdx = tourIdx >= 0 ? tourIdx : inQuote ? this.pick : -1;
+    if (tourIdx !== this.tourIdx) {
+      this.tourIdx = tourIdx;
+      window.dispatchEvent(new CustomEvent("asfra:tour", { detail: tourIdx }));
+    }
+
     // Exploded view: each state lifts with a delay by its order, the first to leave returns last.
     const lifts: number[] = [];
     for (const st of this.states) {
       const delay = (1 - st.order) * 0.42;
       const t = ease(clamp01((c.explode - delay) / 0.58));
-      lifts.push(t * 1.05);
+      this.focus[st.index] = lerp(this.focus[st.index], st.index === focusIdx ? 1 : 0, 1 - Math.exp(-dt * 5));
+      lifts.push(t * 1.05 + ease(this.focus[st.index]) * 0.6);
       const on = st.index < this.lit ? 1 : 0;
       this.glow[st.index] = lerp(this.glow[st.index], on, 1 - Math.exp(-dt * 8));
     }
@@ -448,10 +520,11 @@ export class MapEngine {
       this.tmp.updateMatrix();
       this.caps.setMatrixAt(k2, this.tmp.matrix);
       const gl = this.glow[p.state];
+      const f = this.focus[p.state];
       this.col
         .copy(ROYAL)
-        .lerp(ICE, gl * 0.7)
-        .multiplyScalar((0.85 + gl * 1.15 + Math.sin(time * 2 + p.xn * 6) * 0.06) * lightLevel);
+        .lerp(ICE, gl * 0.7 + f * 0.3)
+        .multiplyScalar((0.85 + gl * 1.15 + f * 0.6 + Math.sin(time * 2 + p.xn * 6) * 0.06) * lerp(lightLevel, Math.max(lightLevel, 1.1), f));
       this.caps.setColorAt(k2, this.col);
     }
     this.active.instanceMatrix.needsUpdate = true;
@@ -465,7 +538,7 @@ export class MapEngine {
     const pos = this.pins.geometry.getAttribute("position") as THREE.BufferAttribute;
     this.states.forEach((st, i) => {
       const node = this.nodes[i];
-      node.scale.setScalar((0.6 + this.glow[i] * 0.8) * draw + 0.0001);
+      node.scale.setScalar((0.6 + this.glow[i] * 0.8 + this.focus[i] * 0.5) * draw + 0.0001);
       pos.setXYZ(i * 2, st.x, linkY, st.z);
       pos.setXYZ(i * 2 + 1, st.x, lifts[i] + 0.17, st.z);
     });
@@ -489,6 +562,8 @@ export class MapEngine {
 
     if (this.bloom) this.bloom.strength = 0.55 + ease(this.energy) * 0.3;
 
+    this.emitFly(span);
+
     // The on-screen counter follows along; it hides once the page has moved past the hero.
     const show = this.intro > 0.6 && window.scrollY < span + window.innerHeight * 0.25;
     const key = `${Math.round(this.energy * 100)}|${this.lit}|${show}`;
@@ -496,6 +571,26 @@ export class MapEngine {
       this.lastEmit = key;
       window.dispatchEvent(new CustomEvent("asfra:energy", { detail: { e: this.energy, lit: this.lit, total: steps, show } }));
     }
+  }
+
+  /**
+   * Hero -> services hand-off: screen positions of a few states and how far the service icons have flown
+   * from them toward the services panel (0 -> 1). Sent only while it is happening.
+   */
+  private emitFly(span: number) {
+    const next = this.anchors[1];
+    if (!next || this.anchors[0]?.id !== "hero") return;
+    const f = clamp01((window.scrollY - span) / Math.max(1, next.top - span));
+    const on = f > 0 && f < 1;
+    if (!on && !this.flyOn) return;
+    this.flyOn = on;
+    this.camera.updateMatrixWorld();
+    FLY_FROM.forEach((si, k) => {
+      this.nodes[si].getWorldPosition(this.v3).project(this.camera);
+      this.fly[k * 2] = ((this.v3.x + 1) / 2) * this.width;
+      this.fly[k * 2 + 1] = ((1 - this.v3.y) / 2) * this.height;
+    });
+    window.dispatchEvent(new CustomEvent("asfra:fly", { detail: { f, pts: this.fly } }));
   }
 
   /** Adaptive quality: lower the resolution, then drop bloom, then give up and show the static map. */
@@ -529,6 +624,7 @@ export class MapEngine {
     cancelAnimationFrame(this.raf);
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("pointermove", this.onPointer);
+    window.removeEventListener("asfra:pick", this.onPick as EventListener);
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
       m.geometry?.dispose();

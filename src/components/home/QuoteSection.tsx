@@ -1,5 +1,6 @@
 import { QuoteForm } from "@/components/forms/QuoteForm";
 import { RevealText } from "@/components/motion/RevealText";
+import { LogoTurn } from "@/components/scene/LogoTurn";
 import { container } from "@/components/ui/styles";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/es";
@@ -14,11 +15,14 @@ export function QuoteSection({
   t,
   title,
   defaultService,
+  brand = false,
 }: {
   lang: Locale;
   t: Dictionary;
   title?: string;
   defaultService?: ServiceSlug;
+  /** Home page: show the logo turning in 3D next to the form. */
+  brand?: boolean;
 }) {
   return (
     <section id="cotizar" data-cue="quote" className="scroll-mt-28 py-24 pb-32 sm:py-32">
@@ -29,8 +33,9 @@ export function QuoteSection({
             {title ?? t.quote.title}
           </RevealText>
           <p className="mt-5 max-w-sm text-lg text-white/70">{t.quote.lead}</p>
+          {brand ? <LogoTurn /> : null}
         </div>
-        <div className="rounded-[28px] border border-white/10 bg-navy/70 p-6 backdrop-blur-xl sm:p-9">
+        <div data-line-end className="rounded-[28px] border border-white/10 bg-navy/70 p-6 backdrop-blur-xl sm:p-9">
           <QuoteForm
             lang={lang}
             t={{ quote: t.quote, validation: t.validation }}

@@ -110,7 +110,7 @@ export function PinnedServices({ items, eyebrow, progress }: { items: Item[]; ey
             </div>
           </div>
 
-          <div className="relative grid flex-1 place-items-center overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#101d48,#0b1535)]">
+          <div data-fly-target className="relative grid flex-1 place-items-center overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#101d48,#0b1535)]">
             {items.map((it) => {
               const Icon = SERVICE_ICONS[it.slug];
               return (

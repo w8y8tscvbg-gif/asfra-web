@@ -92,7 +92,12 @@ export function QuoteForm({ lang, t, serviceNames, defaultService, idPrefix = "q
       </Field>
       <Field id={id("state")} label={t.quote.state} error={msg(errors.state?.message)}>
         <SelectWrap>
-          <select id={id("state")} className={`${inputCls} appearance-none pr-10`} {...aria("state")} {...register("state")}>
+          <select id={id("state")} className={`${inputCls} appearance-none pr-10`} {...aria("state")}
+            {...register("state", {
+              // Lights the chosen state on the home page's 3D map (no-op elsewhere).
+              onChange: (e) => window.dispatchEvent(new CustomEvent("asfra:pick", { detail: e.target.value })),
+            })}
+          >
             <option value="" disabled className="text-navy">
               {t.quote.selectState}
             </option>

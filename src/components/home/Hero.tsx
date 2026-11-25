@@ -2,12 +2,14 @@ import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { Magnetic } from "@/components/motion/Magnetic";
 import { Reveal } from "@/components/motion/Reveal";
-import { RevealText } from "@/components/motion/RevealText";
 import { btn, container } from "@/components/ui/styles";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/es";
 import { getUsMap } from "@/lib/usMap";
+import { HeroTitle } from "@/components/scene/HeroTitle";
 import { ScrollConnect } from "@/components/scene/ScrollConnect";
+import { SloganTicker } from "@/components/scene/SloganTicker";
+import { SERVICE_SLUGS } from "@/lib/site";
 import { UsNetworkMap } from "./UsNetworkMap";
 
 /**
@@ -30,14 +32,10 @@ export function Hero({ lang, t }: { lang: Locale; t: Dictionary }) {
             <Reveal onMount delay={0.2} y={12}>
               <p className="eyebrow">{t.hero.eyebrow}</p>
             </Reveal>
-            <RevealText
-              as="h1"
-              onMount
-              delay={0.35}
+            <HeroTitle
+              text={t.hero.title}
               className="mt-5 text-[2.9rem] leading-[0.95] tracking-[-0.045em] sm:text-7xl lg:text-[5.6rem] xl:text-[6.4rem]"
-            >
-              {t.hero.title}
-            </RevealText>
+            />
             <Reveal onMount delay={1} stagger={0.12} className="mt-6">
               <p className="max-w-md text-lg leading-relaxed text-white/75 sm:text-xl">{t.hero.subtitle}</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -56,6 +54,7 @@ export function Hero({ lang, t }: { lang: Locale; t: Dictionary }) {
               <p className="mt-10 flex items-center gap-3 font-display text-sm font-medium text-royal-400">
                 <span className="h-px w-10 bg-royal" aria-hidden />
                 {t.brand.slogan}
+                <SloganTicker items={SERVICE_SLUGS.map((s) => t.serviceList[s].name)} />
               </p>
             </Reveal>
           </div>
